@@ -1,7 +1,10 @@
 #ifndef GMNR_COMMON_H
 #define GMNR_COMMON_H
 
+#include <vector>
+
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 
 namespace gmnr{
 	typedef float Scalar;
@@ -30,6 +33,10 @@ namespace gmnr{
 	typedef Eigen::Translation<Scalar, 3> Translation3D;
 	typedef Eigen::AngleAxis<Scalar> AngleAxis;
 	typedef Eigen::Quaternion<Scalar> Quaternion;
+
+	typedef Eigen::SparseMatrix<Scalar> SparseMatrix;
+	typedef Eigen::Triplet<Scalar> Triplet;
+	typedef std::vector<Triplet> TripletList;
 }
 
 #endif

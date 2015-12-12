@@ -60,6 +60,14 @@ namespace gmnr{
 			const std::vector<int> &_beta,
 			const Vector &_kappa,
 			const Vector &_lambda);
+
+		LIBMULTITPS_API void solve_new_sparse_(const Matrix &_X, 
+			const Matrix &_Y,
+			const std::vector<int> &_m,
+			const std::vector<int> &_alpha,
+			const std::vector<int> &_beta,
+			const Vector &_kappa,
+			const Vector &_lambda);
 	};
 };
 
