@@ -25,10 +25,10 @@ namespace gmnr{
 	TPSFunction::TPSFunction(const Matrix&_X, const Matrix&_A, const Matrix&_B): X_(_X), A_(_A), B_(_B){}
 
 	TPSFunction::TPSFunction(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda) {
-		qr_solve_(_X, _Y, _lambda);
+		//qr_solve_(_X, _Y, _lambda);
 		//formula_solve_(_X, _Y, _lambda);
 		//svd_solve_(_X, _Y, _lambda);
-		//direct_inverse_solve_(_X, _Y, _lambda);
+		direct_inverse_solve_(_X, _Y, _lambda);
 	}
 
 	void TPSFunction::formula_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda){
@@ -148,9 +148,21 @@ namespace gmnr{
 	}
 
 	Matrix TPSFunction::evaluate(const Matrix &_X) const {
-		Matrix M = greenFunc(_X, X_);
 		Matrix X = Eigen::Homogeneous<Matrix, Eigen::Horizontal>(_X);
-		return M * A_ + X * B_;
+
+		//Very space-consuming!
+		//Matrix M = greenFunc(_X, X_);
+		//return M * A_ + X * B_;
+
+		Matrix rt = Matrix::Zero(_X.rows(), _X.cols());
+		for (int i = 0; i < _X.rows(); i++) {
+			for (int j = 0; j < X_.rows(); j++) {
+				rt.row(i) += greenFunc( (_X.row(i) - X_.row(j)).norm(), _X.cols() ) * A_.row(j);
+			}
+		}
+		rt += X * B_;
+
+		return rt;
 	}
 
 #ifdef _DEBUG

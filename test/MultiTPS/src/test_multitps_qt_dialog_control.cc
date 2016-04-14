@@ -15,17 +15,17 @@ namespace gmnr{
 
 	void TestMultiTPSDialogControl::on_dialog_updatePoints(QList<QPoint> &_points1, QList<QPoint> &_points2, QList<QPoint> &_points3){
 		if (_points1.size() != 8){
-			QMessageBox::warning(this, "Error", "wrong number of points1!!!");
+			QMessageBox::warning(this, "Error", "the number of points of view1 must be equal to 8!!!");
 			return;
 		}
 
 		if (_points2.size() != 8){
-			QMessageBox::warning(this, "Error", "Error", "wrong number of points2!!!");
+			QMessageBox::warning(this, "Error", "the number of points of view2 must be equal to 8!!!");
 			return;
 		}
 
 		if (_points3.size() != 8){
-			QMessageBox::warning(this, "Error", "Error", "wrong number of points3!!!");
+			QMessageBox::warning(this, "Error", "the number of points of view3 must be equal to 8!!!");
 			return;
 		}
 
@@ -33,6 +33,13 @@ namespace gmnr{
 		QListPoint_to_PointSet2D(_points1, X);
 		QListPoint_to_PointSet2D(_points2, Y);
 		QListPoint_to_PointSet2D(_points3, Z);
+
+		float kappa_1 = kappa_1_dsb->value();
+		float kappa_2 = kappa_2_dsb->value();
+		float kappa_3 = kappa_3_dsb->value();
+		float lambda_1 = lambda_1_dsb->value();
+		float lambda_2 = lambda_2_dsb->value();
+		float lambda_3 = lambda_3_dsb->value();
 
 		Vector2D t;
 		t << -300, -300;
@@ -66,13 +73,15 @@ namespace gmnr{
 		beta[1] = 2;
 		beta[2] = 0;
 		Vector kappa(3);
-		kappa << 0.01, 0.01, 0.01;
+		kappa << kappa_1, kappa_2, kappa_3;
 		Vector lambda(3);
-		lambda << 0.001, 0.001, 0.001;
+		lambda << lambda_1, lambda_2, lambda_3;
 
 		MultiTPS mtps(input_X, input_Y, m, alpha, beta, kappa, lambda);
 		//std::cout << "mtps = \n" << mtps << std::endl;
 		TPSFunction f1 = mtps.getfs()[0], f2 = mtps.getfs()[1], f3 = mtps.getfs()[2];
+
+		input_X.sparseView();
 
 		X = f1.evaluate(X);
 		Y = f2.evaluate(Y);

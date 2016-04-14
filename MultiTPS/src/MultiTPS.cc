@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <unordered_map>
 #include <Eigen/Core>
 #include <GMNR/MultiTPS.h>
@@ -404,6 +405,15 @@ namespace gmnr{
 				m += _m[i];
 			}
 
+			std::cout << "N = " << N << std::endl;
+			std::cout << "P = " << P << std::endl;
+			std::cout << "m = " << m << std::endl;
+			for (int i = 0; i < P; i++) {
+				std::cout << "( " << _alpha[i] << ", " << _beta[i] << ") " << _m[i] << std::endl;
+			}
+			std::cout << "_X : rows = " << _X.rows() << " cols = " << _X.cols() << std::endl;
+			std::cout << "_Y : rows = " << _Y.rows() << " cols = " << _Y.cols() << std::endl;
+
 			Matrix X = Eigen::Homogeneous<Matrix, Eigen::Horizontal>(_X);
 			Matrix Y = Eigen::Homogeneous<Matrix, Eigen::Horizontal>(_Y);
 
@@ -539,6 +549,8 @@ namespace gmnr{
 					M[k] << M_k_a_a, M_k_a_b,
 						M_k_b_a, M_k_b_b;
 				}
+
+				std::cout << "M[" << k << "] : rows = " << M[k].rows() << " cols = " << M[k].cols() << std::endl;
 			}
 
 			std::vector<SparseMatrix> Ca(P), Cb(P);
@@ -553,6 +565,9 @@ namespace gmnr{
 				Ca[mu].setFromTriplets(Ca_coefficients.begin(), Ca_coefficients.end());
 				Cb[mu].resize(d+1, N*(d+1));
 				Cb[mu].setFromTriplets(Cb_coefficients.begin(), Cb_coefficients.end());
+
+				std::cout << "Ca[" << mu << "] : rows = " << Ca[mu].rows() << " cols = " << Ca[mu].cols() << " nonzeros = " << Ca[mu].nonZeros() << std::endl;
+				std::cout << "Cb[" << mu << "] : rows = " << Cb[mu].rows() << " cols = " << Cb[mu].cols() << " nonzeros = " << Cb[mu].nonZeros() << std::endl;
 			}
 
 			//for (int mu = 0; mu < P; mu++){
@@ -584,6 +599,8 @@ namespace gmnr{
 				D_k.setFromTriplets(D_k_coefficients.begin(), D_k_coefficients.end());
 
 				D[k] = D_k;
+
+				std::cout << "D[" << k << "] : rows = " << D[k].rows() << " cols = " << D[k].cols() << " nonzeros = " << D[k].nonZeros() << std::endl;
 			}
 
 			//for (int k = 0; k < N; k++){
@@ -634,6 +651,10 @@ namespace gmnr{
 			Hb.setFromTriplets(Hb_coefficients.begin(), Hb_coefficients.end());
 			S = Ha - Hb;
 
+			std::cout << "Ha : rows = " << Ha.rows() << " cols = " << Ha.cols() << " nonzeros = " << Ha.nonZeros() << std::endl;
+			std::cout << "Hb : rows = " << Hb.rows() << " cols = " << Hb.cols() << " nonzeros = " << Hb.nonZeros() << std::endl;
+			std::cout << "S : rows = " << S.rows() << " cols = " << S.cols() << " nonzeros = " << S.nonZeros() << std::endl;
+
 			//std::cout << "Ha = \n" << Ha << std::endl;
 			//std::cout << "Hb = \n" << Hb << std::endl;
 			//std::cout << "S = \n" << S << std::endl;
@@ -670,41 +691,118 @@ namespace gmnr{
 			Ka.setFromTriplets(Ka_coefficients.begin(), Ka_coefficients.end());
 			Kb.setFromTriplets(Kb_coefficients.begin(), Kb_coefficients.end());
 
+			std::cout << "Ja : rows = " << Ja.rows() << " cols = " << Ja.cols() << " nonzeros = " << Ja.nonZeros() << std::endl;
+			std::cout << "Jb : rows = " << Jb.rows() << " cols = " << Jb.cols() << " nonzeros = " << Jb.nonZeros() << std::endl;
+			std::cout << "T : rows = " << T.rows() << " cols = " << T.cols() << " nonzeros = " << T.nonZeros() << std::endl;
+			std::cout << "Ka : rows = " << Ka.rows() << " cols = " << Ka.cols() << " nonzeros = " << Ka.nonZeros() << std::endl;
+			std::cout << "Kb : rows = " << Kb.rows() << " cols = " << Kb.cols() << " nonzeros = " << Kb.nonZeros() << std::endl;
+
 			Matrix D_T_diag_lambda_M_D = Matrix::Zero(2*m, 2*m);
 			for (int k = 0; k < N; k++) {
-				D_T_diag_lambda_M_D += _lambda[k] * D[k].transpose() * M[k] * D[k];
+				SparseMatrix temp = _lambda[k] * D[k].transpose() * SparseMatrix(M[k].sparseView()) * D[k];
+				D_T_diag_lambda_M_D += Matrix(temp);
 			}
+			std::cout << "D_T_diag_lambda_M_D : rows = " << D_T_diag_lambda_M_D.rows() << " cols = " << D_T_diag_lambda_M_D.cols() << " nonzeros = " << D_T_diag_lambda_M_D.nonZeros() << std::endl;
 
+			SparseMatrix temp;
 			Matrix P11(2*m, 2*m), P12(2*m, N * (d+1));
-			P11 = S.transpose() * S + Ha.transpose() * Ka * Ha + Hb.transpose() * Kb * Hb;
-			P12 = S.transpose() * T + Ha.transpose() * Ka * Ja + Hb.transpose() * Kb * Jb;
+			temp = S.transpose() * S;
+			P11 = Matrix(temp);
+			std::cout << "P11 : rows = " << P11.rows() << " cols = " << P11.cols() << " nonzeros = " << P11.nonZeros() << std::endl;
+			temp = Ha.transpose() * Ka * Ha;
+			P11 += Matrix(temp);
+			std::cout << "P11 : rows = " << P11.rows() << " cols = " << P11.cols() << " nonzeros = " << P11.nonZeros() << std::endl;
+			temp = Hb.transpose() * Kb * Hb;
+			P11 += Matrix(temp);
+			std::cout << "P11 : rows = " << P11.rows() << " cols = " << P11.cols() << " nonzeros = " << P11.nonZeros() << std::endl;
+			temp = S.transpose() * T;
+			P12 = Matrix(temp);
+			std::cout << "P12 : rows = " << P12.rows() << " cols = " << P12.cols() << " nonzeros = " << P12.nonZeros() << std::endl;
+			temp = Ha.transpose() * Ka * Ja;
+			P12 += Matrix(temp);
+			std::cout << "P12 : rows = " << P12.rows() << " cols = " << P12.cols() << " nonzeros = " << P12.nonZeros() << std::endl;
+			temp = Hb.transpose() * Kb * Jb;
+			P12 += Matrix(temp);
+			std::cout << "P12 : rows = " << P12.rows() << " cols = " << P12.cols() << " nonzeros = " << P12.nonZeros() << std::endl;
+
 			Matrix Z1(2*m, d);
-			Z1 = Ha.transpose() * Ka * _X + Hb.transpose() * Kb * _Y;
+			temp = Ha.transpose() * Ka * SparseMatrix(_X.sparseView());
+			Z1 = Matrix(temp);
+			temp = Hb.transpose() * Kb * SparseMatrix(_Y.sparseView());
+			Z1 += Matrix(temp);
+			std::cout << "Z1 : rows = " << Z1.rows() << " cols = " << Z1.cols() << " nonzeros = " << Z1.nonZeros() << std::endl;
+
 			Matrix P21(N * (d+1), 2*m), P22(N * (d+1), N * (d+1));
-			P21 = T.transpose() * S + Ja.transpose() * Ka * Ha + Jb.transpose() * Kb * Hb;
-			P22 = T.transpose() * T + Ja.transpose() * Ka * Ja + Jb.transpose() * Kb * Jb;
+			temp = T.transpose() * S;
+			P21 = Matrix(temp);
+			temp = Ja.transpose() * Ka * Ha;
+			P21 += Matrix(temp);
+			temp = Jb.transpose() * Kb * Hb;
+			P21 += Matrix(temp);
+			std::cout << "P21 : rows = " << P21.rows() << " cols = " << P21.cols() << " nonzeros = " << P21.nonZeros() << std::endl;
+			temp = T.transpose() * T;
+			P22 = Matrix(temp);
+			temp = Ja.transpose() * Ka * Ja;
+			P22 += Matrix(temp);
+			temp = Jb.transpose() * Kb * Jb;
+			P22 += Matrix(temp);
+			std::cout << "P22 : rows = " << P22.rows() << " cols = " << P22.cols() << " nonzeros = " << P22.nonZeros() << std::endl;
+
 			Matrix Z2(N * (d+1), d);
-			Z2 = Ja.transpose() * Ka * _X + Jb.transpose() * Kb * _Y;
+			temp = Ja.transpose() * Ka * SparseMatrix(_X.sparseView());
+			Z2 = Matrix(temp);
+			temp = Jb.transpose() * Kb * SparseMatrix(_Y.sparseView());
+			Z2 += Matrix(temp);
+			std::cout << "Z2 : rows = " << Z2.rows() << " cols = " << Z2.cols() << " nonzeros = " << Z2.nonZeros() << std::endl;
 
 			Matrix equationL = Matrix::Zero(2*m + N * (d+1), 2*m + N * (d+1));
 			equationL << P11 + D_T_diag_lambda_M_D, P12,
 						P21, P22;
+			std::cout << "equationL : rows = " << equationL.rows() << " cols = " << equationL.cols() << " nonzeros = " << equationL.nonZeros() << std::endl;
 
 			Matrix equationR = Matrix::Zero(2*m + N * (d+1), d);
 			equationR << Z1, Z2;
+			std::cout << "equationR : rows = " << equationR.rows() << " cols = " << equationR.cols() << " nonzeros = " << equationR.nonZeros() << std::endl;
+
+			//std::fstream output_file;
+			//output_file.open("equationL.txt", std::ios::out);
+			//if (output_file) {
+			//	output_file << equationL;
+			//}
+			//output_file.close();
+			//output_file.open("equationR.txt", std::ios::out);
+			//if (output_file) {
+			//	output_file << equationR;
+			//}
+			//output_file.close();
 
 			Matrix solution(2*m + N * (d+1), d);
 
 			//solution = (equationL.transpose() * equationL).inverse() * (equationL.transpose() * equationR);
 
-			Eigen::JacobiSVD<Matrix> svd(equationL, Eigen::ComputeThinU | Eigen::ComputeThinV);
-			std::cout << "Condition Number : " << svd.singularValues()[0] / svd.singularValues().reverse()[0] << std::endl;
-			std::cout << "Singular Vector : \n" << svd.singularValues() << std::endl;
-			std::cout << "Rows = " << equationL.rows() << " Columns = " << equationL.cols() << std::endl;
-			std::cout << "before reset threshold, rank = " << svd.rank() << std::endl;
-			svd.setThreshold(Eigen::NumTraits<Scalar>::epsilon());
-			std::cout << "after reset threshold, rank = " << svd.rank() << std::endl;
-			solution = svd.solve(equationR);
+			//Eigen::JacobiSVD<Matrix> svd(equationL, Eigen::ComputeThinU | Eigen::ComputeThinV);
+			//std::cout << "Condition Number : " << svd.singularValues()[0] / svd.singularValues().reverse()[0] << std::endl;
+			//std::cout << "Singular Vector : \n" << svd.singularValues() << std::endl;
+			//std::cout << "Rows = " << equationL.rows() << " Columns = " << equationL.cols() << std::endl;
+			//std::cout << "before reset threshold, rank = " << svd.rank() << std::endl;
+			//svd.setThreshold(Eigen::NumTraits<Scalar>::epsilon());
+			//std::cout << "after reset threshold, rank = " << svd.rank() << std::endl;
+			//solution = svd.solve(equationR);
+
+			Eigen::LDLT<Matrix> ldlt(equationL);
+			solution = ldlt.solve(equationR);
+			Scalar ldlt_residual = (equationL * solution - equationR).squaredNorm();
+			std::cout << "ldlt_residual = "<< ldlt_residual << std::endl;
+
+			if (ldlt_residual > 1.0) {
+				Eigen::FullPivLU<Matrix> lu(equationL);
+				solution = lu.solve(equationR);
+				Scalar lu_residual = (equationL * solution - equationR).squaredNorm();
+				if (lu_residual > 1.0) {
+					std::cout << "lu_residual =" << lu_residual << std::endl;
+					return;
+				}
+			}
 
 			//std::cout << "Ax - b = \n" << equationL * solution - equationR << std::endl; 
 
@@ -868,7 +966,6 @@ namespace gmnr{
 			equationL << P11 + diag_lambda_M, P12,
 				P21, P22,
 				U, Matrix::Zero(N * 2*m, N *(d+1));
-
 			Matrix equationR = Matrix::Zero(N * 2*m + N * (d+1) + N * 2*m, d);
 			equationR << Z1, Z2, Matrix::Zero(N * 2*m, d);
 

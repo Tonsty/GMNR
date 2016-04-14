@@ -1,0 +1,2 @@
+ADD_SUBDIRECTORY(manual_registration)
+ADD_SUBDIRECTORY(nregistar)

@@ -306,18 +306,21 @@ int main(int argc, char** argv){
 
 	//-------------------------------------------------------------------------------------------------
 
-	Matrix X(X1Y1.rows() + X2Y2.rows(), X1Y1.cols()), Y(X2Y2.rows() + X2Y2.rows(), X2Y2.cols());
-	X << X1Y1, X2Y2;
-	Y << X2Y2, X3Y3;
-	std::vector<int> m(2);
+	Matrix X(X1Y1.rows() * 2 + X2Y2.rows(), X1Y1.cols()), Y(X2Y2.rows() + X3Y3.rows() * 2, X2Y2.cols());
+	X << X1Y1, X2Y2, X1Y1;
+	Y << X2Y2, X3Y3, X3Y3;
+	std::vector<int> m(3);
 	m[0] = X1Y1.rows();
 	m[1] = X2Y2.rows();
-	std::vector<int> alpha(2);
+	m[2] = X1Y1.rows();
+	std::vector<int> alpha(3);
 	alpha[0] = 0;
 	alpha[1] = 1;
-	std::vector<int> beta(2);
+	alpha[2] = 0;
+	std::vector<int> beta(3);
 	beta[0] = 1;
 	beta[1] = 2;
+	beta[3] = 2;
 	Vector kappa(3);
 	kappa << 0.01, 0.01, 0.01;
 	Vector lambda(3);

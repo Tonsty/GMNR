@@ -25,16 +25,16 @@ namespace gmnr{
 
 		void mousePressEvent(QMouseEvent *event);
 
-		void keyPressEvent(QKeyEvent *event);
-
-		void keyReleaseEvent(QKeyEvent *event);
-
 	protected:
 		void QListPoint_to_PointSet2D(QList<QPoint> &_points, gmnr::PointSet2D &_pointset2d);
 
 		void PointSet2D_to_QListPoint(gmnr::PointSet2D &_pointset2d, QList<QPoint> &_points);
 
-		void setSample();
+		void setDefaultSample();
+
+		void setLastSample();
+
+		void paint(QList<QPoint> &_points1, QList<QPoint> &_points2, QList<QPoint> &_points3, bool _draw_correspondences = false, float opacity = 1.0f);
 
 		enum PushButton {PointToPointArun, PointToPointUmeyama, PointToPlaneLinear};
 		
@@ -42,9 +42,11 @@ namespace gmnr{
 		QList<QPoint> points2_;
 		QList<QPoint> points3_;
 
-		bool points1_active_;
-		bool points2_active_;
-		bool points3_active_;
+		QList<QPoint> points1_last_;
+		QList<QPoint> points2_last_;
+		QList<QPoint> points3_last_;
+
+		bool after_multitps;
 
 	signals:
 		void updatePoints(QList<QPoint> &_points1, QList<QPoint> &_points2, QList<QPoint> &_points3);
@@ -58,7 +60,11 @@ namespace gmnr{
 
 		void on_pushButton_clear_3_clicked();
 
-		void on_pushButton_reset_clicked();
+		void on_pushButton_reset_d_clicked();
+
+		void on_pushButton_reset_l_clicked();
+
+		void on_checkBox_showLast_stateChanged(int state);
 	};
 };
 
