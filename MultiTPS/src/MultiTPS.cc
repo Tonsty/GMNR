@@ -1,7 +1,9 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
+#include <math.h>
 #include <Eigen/Core>
+#include <GMNR/DualTPS.h>
 #include <GMNR/MultiTPS.h>
 
 namespace gmnr{
@@ -20,7 +22,9 @@ namespace gmnr{
 		const std::vector<int> &_alpha,
 		const std::vector<int> &_beta,
 		const Vector &_kappa,
-		const Vector &_lambda) {
+		const Vector &_lambda,
+		const int &_max_iter_num,
+		const Scalar &_iter_rate) {
 			//solve_old_(_X, _Y, _m, _alpha, _beta, _kappa, _lambda);
 
 			//std::vector<TPSFunction> old_fs = fs_; 
@@ -28,8 +32,9 @@ namespace gmnr{
 			//	std::cout << "old_fs[" << i << "]=\n" << old_fs[i] << std::endl;
 			//}
 
-			solve_new_sparse_(_X, _Y, _m, _alpha, _beta, _kappa, _lambda);
-
+			if(_max_iter_num > 0) solve_iterative_(_X, _Y, _m, _alpha, _beta, _kappa, _lambda, _max_iter_num, _iter_rate);
+			else solve_new_sparse_(_X, _Y, _m, _alpha, _beta, _kappa, _lambda);
+			
 			//std::vector<TPSFunction> new_fs = fs_; 
 			//for (int i = 0; i < new_fs.size(); i++){
 			//	std::cout << "new_fs[" << i << "]=\n" << new_fs[i] << std::endl;
@@ -1070,4 +1075,75 @@ namespace gmnr{
 			//}
 	}
 
+	void MultiTPS::solve_iterative_(const Matrix &_X, 
+		const Matrix &_Y,
+		const std::vector<int> &_m,
+		const std::vector<int> &_alpha,
+		const std::vector<int> &_beta,
+		const Vector &_kappa,
+		const Vector &_lambda,
+		const int &_max_iter_num,
+		const Scalar &_iter_rate) {
+			int P = _m.size(), N = _lambda.size();
+			int d = _X.cols();
+			int m = 0; // or m = _X.rows();
+			for (int i = 0; i < P; i++) {
+				m += _m[i];
+			}
+
+			std::cout << "N = " << N << std::endl;
+			std::cout << "P = " << P << std::endl;
+			std::cout << "m = " << m << std::endl;
+			for (int i = 0; i < P; i++) {
+				std::cout << "( " << _alpha[i] << ", " << _beta[i] << ") " << _m[i] << std::endl;
+			}
+			std::cout << "_X : rows = " << _X.rows() << " cols = " << _X.cols() << std::endl;
+			std::cout << "_Y : rows = " << _Y.rows() << " cols = " << _Y.cols() << std::endl;
+
+			//Initialization
+			std::vector<int> An(N, 0);
+			for (int i = 0, j = 0; i < P; j+= _m[i], i++) {
+				An[_alpha[i]] += _m[i];
+				An[_beta[i]] += _m[i];
+			}
+			fs_.resize(N);
+			Matrix current_X(_X), current_Y(_Y);
+
+			Scalar min_lambda = _lambda[0], min_kappa = _kappa[0];
+			for (int i = 1; i < N; i++) {
+				min_lambda = min_lambda < _lambda[i] ? min_lambda : _lambda[i];
+				min_kappa = min_kappa < _kappa[i] ? min_kappa : _kappa[i];
+			}
+			Scalar iter_rate = _iter_rate > 0 ? _iter_rate : pow(min_kappa, 1.0/_max_iter_num);
+			Scalar current_rate = 1.0;
+			for(int iter_num = 0;  iter_num < _max_iter_num; iter_num++) {
+				for (int i = 0; i < N; i++) {
+					Matrix X(An[i], d), Y(An[i], d);
+					for (int j = 0, k1 = 0, k2 = 0; j < P; k1 += _m[j], j++) {
+						if (_alpha[j] == i) {
+							X.block(k2, 0, _m[j], d) = _X.block(k1, 0, _m[j], d);
+							if(iter_num == 0) Y.block(k2, 0, _m[j], d) = _Y.block(k1, 0, _m[j], d);
+							else Y.block(k2, 0, _m[j], d) = current_Y.block(k1, 0, _m[j], d);
+							k2 += _m[j];
+						} else if (_beta[j] == i) {
+							X.block(k2, 0, _m[j], d) = _Y.block(k1, 0, _m[j], d);
+							if(iter_num == 0) Y.block(k2, 0, _m[j], d) = _X.block(k1, 0, _m[j], d);
+							else Y.block(k2, 0, _m[j], d) = current_X.block(k1, 0, _m[j], d);
+							k2 += _m[j];
+						}
+					}
+					Scalar lambda_i = _lambda[i] * ((1.0 / min_kappa * current_rate > 1.0) ? (1.0 / min_kappa * current_rate) : 1.0); // _lambda[i] * (min_lambda / min_kappa) * (1.0 / min_lambda * current_rate)
+					Scalar kappa_i =  _kappa[i] * ((1.0 / min_kappa * current_rate > 1.0) ? (1.0 / min_kappa * current_rate) : 1.0);
+					fs_[i] = TPSFunction(X, Y, lambda_i, kappa_i);
+					for (int j = 0, k1 = 0; j < P; k1 += _m[j], j++) {
+						if (_alpha[j] == i) {
+							current_X.block(k1, 0, _m[j], d) = fs_[i].evaluate(_X.block(k1, 0, _m[j], d));
+						} else if (_beta[j] == i) {
+							current_Y.block(k1, 0, _m[j], d) = fs_[i].evaluate(_Y.block(k1, 0, _m[j], d));
+						}
+					}
+				}
+				current_rate *= iter_rate;
+			}
+	}
 };

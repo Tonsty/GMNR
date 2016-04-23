@@ -306,27 +306,27 @@ int main(int argc, char** argv){
 
 	//-------------------------------------------------------------------------------------------------
 
-	Matrix X(X1Y1.rows() * 2 + X2Y2.rows(), X1Y1.cols()), Y(X2Y2.rows() + X3Y3.rows() * 2, X2Y2.cols());
-	X << X1Y1, X2Y2, X1Y1;
-	Y << X2Y2, X3Y3, X3Y3;
+	Matrix X(X1Y1.rows() + X2Y2.rows() + X3Y3.rows(), X1Y1.cols()), Y(X2Y2.rows() + X3Y3.rows() + X1Y1.rows(), X2Y2.cols());
+	X << X2Y2, X3Y3, X3Y3;
+	Y << X1Y1, X2Y2, X1Y1;
 	std::vector<int> m(3);
 	m[0] = X1Y1.rows();
 	m[1] = X2Y2.rows();
-	m[2] = X1Y1.rows();
+	m[2] = X3Y3.rows();
 	std::vector<int> alpha(3);
-	alpha[0] = 0;
-	alpha[1] = 1;
-	alpha[2] = 0;
+	alpha[0] = 1;
+	alpha[1] = 2;
+	alpha[2] = 2;
 	std::vector<int> beta(3);
-	beta[0] = 1;
-	beta[1] = 2;
-	beta[3] = 2;
+	beta[0] = 0;
+	beta[1] = 1;
+	beta[2] = 0;
 	Vector kappa(3);
 	kappa << 0.01, 0.01, 0.01;
 	Vector lambda(3);
 	lambda << 0.001, 0.001, 0.001;
 
-	MultiTPS mtps(X, Y, m, alpha, beta, kappa, lambda);
+	MultiTPS mtps(X, Y, m, alpha, beta, kappa, lambda, 10);
 	//std::cout << "mtps = \n" << mtps << std::endl;
 	TPSFunction f1 = mtps.getfs()[0], f2 = mtps.getfs()[1], f3 = mtps.getfs()[2];
 
@@ -336,8 +336,8 @@ int main(int argc, char** argv){
 	Scalar XtA_norm_2 = (f2.getX().transpose() * f2.getA()).norm();
 	std::cout << "XtA_norm_2 is: " << XtA_norm_2 << std::endl;
 
-	Scalar XtA_norm_3 = (f1.getX().transpose() * f3.getA()).norm();
-	std::cout << "XtA_norm_3 is: " << XtA_norm_1 << std::endl;
+	Scalar XtA_norm_3 = (f3.getX().transpose() * f3.getA()).norm();
+	std::cout << "XtA_norm_3 is: " << XtA_norm_3 << std::endl;
 
 	CvScalar white;
 	white.val[0] = 255.0;

@@ -52,7 +52,7 @@ namespace gmnr{
 
 		LIBTPS_API TPSFunction(const Matrix&_X, const Matrix&_A, const Matrix&_B);
 
-		LIBTPS_API TPSFunction(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda = 0.0);
+		LIBTPS_API TPSFunction(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda = 0.0, const Scalar &_kappa = 0.0);
 
 		LIBTPS_API Matrix evaluate(const Matrix &_X) const;
 
@@ -78,10 +78,10 @@ namespace gmnr{
 		Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> B_;
 
 	private:
-		LIBTPS_API void formula_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda);
-		LIBTPS_API void direct_inverse_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda);
-		LIBTPS_API void svd_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda);
-		LIBTPS_API void qr_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda);
+		LIBTPS_API void formula_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa);
+		LIBTPS_API void direct_inverse_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa);
+		LIBTPS_API void svd_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa);
+		LIBTPS_API void qr_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa);
 
 	};
 }

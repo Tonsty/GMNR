@@ -36,8 +36,7 @@ void drawCircles(const Matrix &X, const Matrix &Y, const CvScalar &color, IplIma
 			unsigned char c = cvWaitKey(15);
 			if (c == 32) break; 
 			else if (c == 27) exit(0); 
-		}
-	}
+		}	}
 }
 
 void drawLine(const Vector &X_more, const Vector &Y_more, const CvScalar &color, IplImage* img, bool wait_and_show = false){
@@ -128,13 +127,25 @@ int main(int argc, char** argv){
 	color.val[3] = 0.0;
 	drawCircles(X2, Y2, color, img, true);
 
- 	Matrix X1Y1(11,2), X2Y2(11, 2);
-	X1Y1.col(0) = X1;
-	X1Y1.col(1) = Y1;
-	X2Y2.col(0) = X2;
-	X2Y2.col(1) = Y2;
+	Matrix X1Y1(11,2), X2Y2(11, 2);
+	X1Y1 << X1, Y1;
+	X2Y2 << X2, Y2;
 
-  	TPSFunction tps1(X1Y1, X2Y2, 0.00001f);
+	//Matrix X1Y1(22,2), X2Y2(22, 2);
+	//X1Y1 << X1, Y1, 
+	//	    X1, Y1;
+	//X2Y2 << X2, Y2,
+	//	    X2, Y2;
+
+	//Matrix X1Y1(33,2), X2Y2(33, 2);
+	//X1Y1 << X1, Y1, 
+	//	X1, Y1,
+	//	X1, Y1;
+	//X2Y2 << X2, Y2,
+	//	X2, Y2,
+	//	X2, Y2;
+
+  	TPSFunction tps1(X1Y1, X2Y2, 0.00001f, 0.0f);
 	Matrix X1Y1_more(801, 2), X2Y2_more(801, 2);
 	X1Y1_more.col(0) = X1_more;
 	X1Y1_more.col(1) = Y1_more;

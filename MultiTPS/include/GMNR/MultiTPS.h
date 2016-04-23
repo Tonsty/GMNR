@@ -41,7 +41,9 @@ namespace gmnr{
 			const std::vector<int> &_alpha,
 			const std::vector<int> &_beta,
 			const Vector &_kappa,
-			const Vector &_lambda);
+			const Vector &_lambda,
+			const int &_max_iter_num = 0,
+			const Scalar &_iter_rate = -1.0);
 		const std::vector<TPSFunction>& getfs() const { return fs_;}
 	protected:
 		std::vector<TPSFunction> fs_;
@@ -68,6 +70,16 @@ namespace gmnr{
 			const std::vector<int> &_beta,
 			const Vector &_kappa,
 			const Vector &_lambda);
+
+		LIBMULTITPS_API void solve_iterative_(const Matrix &_X, 
+			const Matrix &_Y,
+			const std::vector<int> &_m,
+			const std::vector<int> &_alpha,
+			const std::vector<int> &_beta,
+			const Vector &_kappa,
+			const Vector &_lambda,
+			const int &_max_iter_num,
+			const Scalar &_iter_rate);
 	};
 };
 
