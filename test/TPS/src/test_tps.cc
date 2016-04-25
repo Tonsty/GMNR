@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <opencv2/opencv.hpp>
 
@@ -127,25 +128,26 @@ int main(int argc, char** argv){
 	color.val[3] = 0.0;
 	drawCircles(X2, Y2, color, img, true);
 
-	Matrix X1Y1(11,2), X2Y2(11, 2);
-	X1Y1 << X1, Y1;
-	X2Y2 << X2, Y2;
+	//Matrix X1Y1(11,2), X2Y2(11, 2);
+	//X1Y1 << X1, Y1;
+	//X2Y2 << X2, Y2;
 
 	//Matrix X1Y1(22,2), X2Y2(22, 2);
 	//X1Y1 << X1, Y1, 
-	//	    X1, Y1;
-	//X2Y2 << X2, Y2,
-	//	    X2, Y2;
-
-	//Matrix X1Y1(33,2), X2Y2(33, 2);
-	//X1Y1 << X1, Y1, 
-	//	X1, Y1,
 	//	X1, Y1;
 	//X2Y2 << X2, Y2,
-	//	X2, Y2,
 	//	X2, Y2;
 
-  	TPSFunction tps1(X1Y1, X2Y2, 0.00001f, 0.0f);
+	Matrix X1Y1(33,2), X2Y2(33, 2);
+	X1Y1 << X1, Y1, 
+		X1, Y1,
+		X1, Y1;
+	X2Y2 << X2, Y2,
+		X2, Y2,
+		X2, Y2;
+
+  	//TPSFunction tps1(X1Y1, X2Y2, 0.0f, 1.0f);
+	ApproxiTPSFunction tps1(X1Y1, X2Y2, 0.0f, 1.0f, 11);
 	Matrix X1Y1_more(801, 2), X2Y2_more(801, 2);
 	X1Y1_more.col(0) = X1_more;
 	X1Y1_more.col(1) = Y1_more;
@@ -156,6 +158,42 @@ int main(int argc, char** argv){
 	color.val[2] = 0.0;
 	color.val[3] = 0.0;
 	drawLine(X2Y2_more.col(0), X2Y2_more.col(1), color, img, true);
+
+	Matrix viewX(4296, 3);
+	std::fstream fs_viewX("viewX.xyz", std::ios::in);
+	if (fs_viewX) {
+		for(int p = 0; p < viewX.rows(); p++) {
+			for (int q = 0; q < viewX.cols(); q++) {
+				fs_viewX >> viewX(p, q);
+			}
+		}
+	}
+	fs_viewX.close();
+	Matrix viewY(4296, 3);
+	std::fstream fs_viewY("viewY.xyz", std::ios::in);
+	if (fs_viewY) {
+		for(int p = 0; p < viewY.rows(); p++) {
+			for (int q = 0; q < viewY.cols(); q++) {
+				fs_viewY >> viewY(p, q);
+			}
+		}
+	}
+	fs_viewY.close();
+
+	TPSFunction tps2(viewX, viewY, 1.0e-5, 1.0f);
+	std::cout << tps2 << std::endl;
+	Matrix viewX_new = tps2.evaluate(viewX);
+
+	std::fstream fs_viewX_new("viewX_new.xyz", std::ios::out);
+	if(fs_viewX_new) {
+		for(int p = 0; p < viewX_new.rows(); p++) {
+			for (int q = 0; q < viewX_new.cols(); q++) {
+				fs_viewX_new << viewX_new(p, q) << " ";
+			}
+			fs_viewX_new << std::endl;
+		}
+	}
+	fs_viewX_new.close();
 
 	while( (unsigned char)cvWaitKey(15) != 27 );
 

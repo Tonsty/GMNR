@@ -17,9 +17,7 @@
 	#endif
 #endif
 
-#ifdef _DEBUG
 #include <iostream>
-#endif
 
 #include <GMNR/common.h>
 #include <GMNR/math/GreenFunction.h>
@@ -41,10 +39,7 @@ namespace gmnr{
 
 	class TPSFunction{
 
-#ifdef _DEBUG
-		// used for debug
 		friend LIBTPS_API std::ostream& operator<<(std::ostream& os, const TPSFunction& tps);
-#endif
 
 	public:
 
@@ -77,15 +72,21 @@ namespace gmnr{
 		Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> A_;
 		Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> B_;
 
-	private:
 		LIBTPS_API void formula_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa);
 		LIBTPS_API void direct_inverse_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa);
-		LIBTPS_API void svd_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa);
 		LIBTPS_API void qr_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa);
 
 	};
+
+	class ApproxiTPSFunction : public TPSFunction {
+
+	public:
+
+		LIBTPS_API ApproxiTPSFunction();
+
+		LIBTPS_API ApproxiTPSFunction(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda = 0.0, const Scalar &_kappa = 0.0, const int &n = -1);
+
+	};
 }
-
-
 
 #endif

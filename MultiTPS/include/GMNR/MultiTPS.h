@@ -81,6 +81,23 @@ namespace gmnr{
 			const int &_max_iter_num,
 			const Scalar &_iter_rate);
 	};
+
+	class ApproxiMultiTPS : public MultiTPS {
+
+	public:
+		LIBMULTITPS_API ApproxiMultiTPS();
+		LIBMULTITPS_API ApproxiMultiTPS(const Matrix &_X, 
+			const Matrix &_Y,
+			const std::vector<int> &_m,
+			const std::vector<int> &_alpha,
+			const std::vector<int> &_beta,
+			const Vector &_kappa,
+			const Vector &_lambda,
+			const std::vector<int> &_na,
+			const std::vector<int> &_nb,
+			const int &_max_iter_num = 0,
+			const Scalar &_iter_rate = -1.0);
+	};
 };
 
 #endif

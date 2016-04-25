@@ -25,81 +25,57 @@ namespace gmnr{
 	TPSFunction::TPSFunction(const Matrix&_X, const Matrix&_A, const Matrix&_B): X_(_X), A_(_A), B_(_B){}
 
 	TPSFunction::TPSFunction(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa) {
-		qr_solve_(_X, _Y, _lambda, _kappa);
+		//qr_solve_(_X, _Y, _lambda, _kappa);
 		//formula_solve_(_X, _Y, _lambda, _kappa);
-		//svd_solve_(_X, _Y, _lambda, _kappa);
-		//direct_inverse_solve_(_X, _Y, _lambda, _kappa);
+		direct_inverse_solve_(_X, _Y, _lambda, _kappa);
 	}
 
 	void TPSFunction::formula_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa){
 		Matrix X = Eigen::Homogeneous<Matrix, Eigen::Horizontal>(_X);
-		Matrix M = (1 + _kappa) * greenFunc(_X, _X) + _lambda * Matrix::Identity(_X.rows(), _X.rows());
+		Matrix M = greenFunc(_X, _X);
+		Matrix S = (1 + _kappa) * M + _lambda * Matrix::Identity(_X.rows(), _X.rows());
 
-		Eigen::JacobiSVD<Matrix> svd_1(M);
-		std::cout << "formula solver Condition Number 1: " << svd_1.singularValues()[0] / svd_1.singularValues().reverse()[0] << std::endl;
+		Matrix inverseS = S.inverse();
+		Matrix transposehomoX_inverseS = X.transpose() * inverseS;
 
-		Matrix inverseM = M.inverse();
-		Matrix transposehomoX_inverseM = X.transpose() * inverseM;
-
-		Eigen::JacobiSVD<Matrix> svd_2(transposehomoX_inverseM * (1+_kappa) * X);
-		std::cout << "formula solver Condition Number 2: " << svd_2.singularValues()[0] / svd_2.singularValues().reverse()[0] << std::endl;
-
-		B_ = (transposehomoX_inverseM * (1+_kappa) * X).inverse() * transposehomoX_inverseM * (_Y + _kappa * _X);
-		A_ = inverseM * (_Y + _kappa * _X - (1+_kappa) * X * B_);
+		B_ = (transposehomoX_inverseS * (1+_kappa) * X).inverse() * transposehomoX_inverseS * (_Y + _kappa * _X);
+		A_ = inverseS * (_Y + _kappa * _X - (1+_kappa) * X * B_);
 		X_ = _X;
 
 		int m = _X.rows(), d = _X.cols();
 
-		std::cout << "formula solver TPS energy : " << _lambda * (A_.transpose() * (M + _lambda * Matrix::Identity(m, m)) * A_).trace() << std::endl;	
+		std::cout << "formula solver TPS bending energy : " << _lambda * (A_.transpose() * M * A_).trace() << std::endl;	
 	}
 
 	void TPSFunction::direct_inverse_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa){
 		int m = _X.rows(), d = _X.cols();
 		
 		Matrix X = Eigen::Homogeneous<Matrix, Eigen::Horizontal>(_X);
-		Matrix M = (1 + _kappa) * greenFunc(_X, _X) + _lambda * Matrix::Identity(m, m);
+		Matrix M = greenFunc(_X, _X);
+		Matrix S = (1 + _kappa) * M + _lambda * Matrix::Identity(m, m);
 
 		Matrix equationL(m + (d+1), m + (d+1)), equationR(m + (d+1), d), solution(m + (d+1), d);
-		equationL << M, (1 + _kappa) * X,
+		equationL << S, (1 + _kappa) * X,
 			X.transpose(), Matrix::Zero(d+1, d+1);
 		equationR << _Y + _kappa * _X, Matrix::Zero(d+1, d);
 
-		Eigen::JacobiSVD<Matrix> svd(equationL);
-		std::cout << "direct inverse solver Condition Number: " << svd.singularValues()[0] / svd.singularValues().reverse()[0] << std::endl;
+		//Eigen::FullPivLU<Matrix> fullLU(equationL);
+		//solution = fullLU.solve(equationR);
 
-		solution = equationL.inverse() * equationR;
+		//Eigen::PartialPivLU<Matrix> partLU(equationL);
+		//solution = partLU.solve(equationR);
+
+		Eigen::HouseholderQR<Matrix> qr(equationL);
+		solution = qr.solve(equationR);
+
+		//Eigen::LDLT<Matrix> ldlt(equationL);
+		//solution = ldlt.solve(equationR);
 
 		A_ = solution.block(0, 0, m, d);
 		B_ = solution.block(m, 0, d+1, d);
 		X_ = _X;
 
-		std::cout << "direct inverse solver TPS energy : " << _lambda * (A_.transpose() * (M + _lambda * Matrix::Identity(m, m)) * A_).trace() << std::endl;
-	}
-
-	void TPSFunction::svd_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa){
-		int m = _X.rows(), d = _X.cols();
-
-		Matrix X = Eigen::Homogeneous<Matrix, Eigen::Horizontal>(_X);
-		Matrix M = (1 + _kappa) * greenFunc(_X, _X) + _lambda * Matrix::Identity(m, m);
-
-		Matrix equationL(m + (d+1), m + (d+1)), equationR(m + (d+1), d), solution(m + (d+1), d);
-		equationL << M, (1 + _kappa) * X,
-			X.transpose(), Matrix::Zero(d+1, d+1);
-		equationR << _Y + _kappa * _X, Matrix::Zero(d+1, d);
-
-		Eigen::JacobiSVD<Matrix> svd(equationL, Eigen::ComputeThinU | Eigen::ComputeThinV);
-		std::cout << "svd solver Condition Number: " << svd.singularValues()[0] / svd.singularValues().reverse()[0] << std::endl;
-		//std::cout << "Rows = " << equationL.rows() << " Columns = " << equationL.cols() << std::endl;
-		//std::cout << "before reset threshold, svd_rank = " << svd.rank() << std::endl;
-		//svd.setThreshold(Eigen::NumTraits<Scalar>::epsilon());
-		//std::cout << "after reset threshold, svd_rank = " << svd.rank() << std::endl;
-		solution = svd.solve(equationR);
-
-		A_ = solution.block(0, 0, m, d);
-		B_ = solution.block(m, 0, d+1, d);
-		X_ = _X;
-
-		std::cout << "svd solver TPS energy : " << _lambda * (A_.transpose() * (M + _lambda * Matrix::Identity(m, m)) * A_).trace() << std::endl;
+		//std::cout << "direct inverse solver TPS bending energy : " << _lambda * (A_.transpose() * M * A_).trace() << std::endl;
 	}
 
 	void TPSFunction::qr_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa){
@@ -120,31 +96,14 @@ namespace gmnr{
 		//Matrix R = qr.matrixR().topLeftCorner(qr.rank(), qr.rank()).template triangularView<Eigen::Upper>();
 		//std::cout << "R = \n" << R << std::endl;
 
-		Eigen::JacobiSVD<Matrix> svd_formula( Q2.transpose() * (1 + _kappa) * M * Q2 + _lambda * Matrix::Identity(m - (d+1), m - (d+1)) );
-		std::cout << "qr solver formula subsolver Condition Number: " << svd_formula.singularValues()[0] / svd_formula.singularValues().reverse()[0] << std::endl;
-
-		A_ = Q2 * (Q2.transpose() * (1 + _kappa) * M * Q2 + _lambda * Matrix::Identity(m - (d+1), m - (d+1))).inverse() * Q2.transpose() * (_Y + _kappa * _X);
+		Matrix equationL = Q2.transpose() * (1 + _kappa) * M * Q2 + _lambda * Matrix::Identity(m - (d+1), m - (d+1));
+		Eigen::FullPivLU<Matrix> fullLU(equationL);
+		Matrix solution = fullLU.solve(Q2.transpose() * (_Y + _kappa * _X));
+		A_ = Q2 * solution;
 		B_ = P * 1.0 / (1 + _kappa) * R.inverse() * Q1.transpose() * ( _Y + _kappa * _X - (1 + _kappa) * M * A_); //Remember to permute B_ back with P!
 		X_ = _X;
 
-		std::cout << "qr solver formula subsolver TPS energy : " << _lambda * (A_.transpose() * (M + _lambda * Matrix::Identity(m, m)) * A_).trace() << std::endl;
-
-		//Matrix equationL(m, m), solution(m, d), equationR(m, d);
-		//equationL << Q1.transpose() * M * Q2, R,
-		//	Q2.transpose() * M * Q2 + _lambda * Matrix::Identity(m-d-1, m-d-1), Matrix::Zero(m-d-1, d+1);
-		//equationR << Q1.transpose() * _Y, Q2.transpose() * _Y;
-		//
-		//Eigen::JacobiSVD<Matrix> svd(equationL, Eigen::ComputeThinU | Eigen::ComputeThinV);
-		//std::cout << "qr solver svd subsolver Condition Number: " << svd.singularValues()[0] / svd.singularValues().reverse()[0] << std::endl;
-		//solution = svd.solve(equationR);
-
-		////solution = equationL.inverse() * equationR;
-
-		//A_ = Q2 * solution.block(0, 0, m-d-1, d);
-		//B_ = P * solution.block(m-d-1, 0, d+1, d); //Remember to permute B_ back with P!
-		//X_ = _X;
-
-		//std::cout << "qr solver svd subsolver TPS energy : " << _lambda * A_.transpose() * (M + _lambda * Matrix::Identity(m, m)) * A_ << std::endl;
+		std::cout << "qr solver TPS bending energy : " << _lambda * (A_.transpose() * M * A_).trace() << std::endl;
 	}
 
 	Matrix TPSFunction::evaluate(const Matrix &_X) const {
@@ -165,13 +124,45 @@ namespace gmnr{
 		return rt;
 	}
 
-#ifdef _DEBUG
+	ApproxiTPSFunction::ApproxiTPSFunction() : TPSFunction() {}
+
+	ApproxiTPSFunction::ApproxiTPSFunction(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa, const int &n) {
+		if (n < 0 || n > _X.rows()) {
+			TPSFunction tps = TPSFunction(_X, _Y, _lambda, _kappa);
+			X_ = tps.getX();
+			A_ = tps.getA();
+			B_ = tps.getB();
+		} else {
+			int m = _X.rows(), d = _X.cols();
+
+			Matrix X = Eigen::Homogeneous<Matrix, Eigen::Horizontal>(_X);
+			Matrix M = greenFunc(_X, _X.topRows(n));
+			Matrix S = (1 + _kappa) * M + _lambda * Matrix::Identity(m, n);
+
+			Matrix equationL(m + (d+1), n + (d+1)), equationR(m + (d+1), d), solution(n + (d+1), d);
+			equationL << S, (1 + _kappa) * X,
+				X.topRows(n).transpose(), Matrix::Zero(d+1, d+1);
+			equationR << _Y + _kappa * _X, Matrix::Zero(d+1, d);
+
+			//Eigen::FullPivLU<Matrix> fullLU(equationL);
+			//solution = fullLU.solve(equationR);
+
+			Eigen::HouseholderQR<Matrix> qr(equationL);
+			solution = qr.solve(equationR);
+
+			A_ = solution.block(0, 0, n, d);
+			B_ = solution.block(n, 0, d+1, d);
+			X_ = _X.topRows(n);
+
+			//std::cout << "direct inverse solver TPS bending energy : " << _lambda * (A_.transpose() * M * A_).trace() << std::endl;
+		}
+	}
+
 	std::ostream& operator<<(std::ostream& os, const TPSFunction& tps){
 		os << "X = \n" << tps.getX() << std::endl;
 		os << "A = \n" << tps.getA() << std::endl;
 		os << "B = \n" << tps.getB() << std::endl;
 		return os;
 	}
-#endif
 	
 }

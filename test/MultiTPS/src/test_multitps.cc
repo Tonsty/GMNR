@@ -307,26 +307,35 @@ int main(int argc, char** argv){
 	//-------------------------------------------------------------------------------------------------
 
 	Matrix X(X1Y1.rows() + X2Y2.rows() + X3Y3.rows(), X1Y1.cols()), Y(X2Y2.rows() + X3Y3.rows() + X1Y1.rows(), X2Y2.cols());
-	X << X2Y2, X3Y3, X3Y3;
-	Y << X1Y1, X2Y2, X1Y1;
+	X << X1Y1, X2Y2, X3Y3;
+	Y << X2Y2, X3Y3, X1Y1;
 	std::vector<int> m(3);
 	m[0] = X1Y1.rows();
 	m[1] = X2Y2.rows();
 	m[2] = X3Y3.rows();
 	std::vector<int> alpha(3);
-	alpha[0] = 1;
-	alpha[1] = 2;
+	alpha[0] = 0;
+	alpha[1] = 1;
 	alpha[2] = 2;
 	std::vector<int> beta(3);
-	beta[0] = 0;
-	beta[1] = 1;
+	beta[0] = 1;
+	beta[1] = 2;
 	beta[2] = 0;
+	std::vector<int> na(3);
+	na[0] = X1Y1.rows();
+	na[1] = X2Y2.rows();
+	na[2] = X3Y3.rows();
+	std::vector<int> nb(3);
+	nb[0] = 0;
+	nb[1] = 0;
+	nb[2] = 0;
 	Vector kappa(3);
-	kappa << 0.01, 0.01, 0.01;
+	kappa << 0.001, 0.001, 0.001;
 	Vector lambda(3);
-	lambda << 0.001, 0.001, 0.001;
+	lambda << 0.0001, 0.0001, 0.0001;
 
 	MultiTPS mtps(X, Y, m, alpha, beta, kappa, lambda, 10);
+	//ApproxiMultiTPS mtps(X, Y, m, alpha, beta, kappa, lambda, na, nb, 10);
 	//std::cout << "mtps = \n" << mtps << std::endl;
 	TPSFunction f1 = mtps.getfs()[0], f2 = mtps.getfs()[1], f3 = mtps.getfs()[2];
 

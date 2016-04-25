@@ -3,7 +3,6 @@
 #include <unordered_map>
 #include <math.h>
 #include <Eigen/Core>
-#include <GMNR/DualTPS.h>
 #include <GMNR/MultiTPS.h>
 
 namespace gmnr{
@@ -1132,8 +1131,37 @@ namespace gmnr{
 							k2 += _m[j];
 						}
 					}
-					Scalar lambda_i = _lambda[i] * ((1.0 / min_kappa * current_rate > 1.0) ? (1.0 / min_kappa * current_rate) : 1.0); // _lambda[i] * (min_lambda / min_kappa) * (1.0 / min_lambda * current_rate)
+					Scalar lambda_i;
+					if(An[i] > 100) lambda_i = _lambda[i];
+					else lambda_i = _lambda[i] * ((1.0 / min_kappa * current_rate > 1.0) ? (1.0 / min_kappa * current_rate) : 1.0); // _lambda[i] * (min_lambda / min_kappa) * (1.0 / min_lambda * current_rate)
 					Scalar kappa_i =  _kappa[i] * ((1.0 / min_kappa * current_rate > 1.0) ? (1.0 / min_kappa * current_rate) : 1.0);
+					std::cout << "view " << i << " : kappa = " << kappa_i << ", lambda = " << lambda_i << std::endl;
+					if (iter_num == 0 && d == 3) {
+						std::stringstream ss_viewX;
+						ss_viewX << "viewX_" << i << ".xyz";
+						std::fstream fs_viewX(ss_viewX.str().c_str(), std::ios::out);
+						if(fs_viewX) {
+							for(int p = 0; p < X.rows(); p++) {
+								for (int q = 0; q < X.cols(); q++) {
+									fs_viewX << X(p, q) << " ";
+								}
+								fs_viewX << std::endl;
+							}
+						}
+						fs_viewX.close();
+						std::stringstream ss_viewY;
+						ss_viewY << "viewY_" << i << ".xyz";
+						std::fstream fs_viewY(ss_viewY.str().c_str(), std::ios::out);
+						if(fs_viewY) {
+							for(int p = 0; p < Y.rows(); p++) {
+								for (int q = 0; q < Y.cols(); q++) {
+									fs_viewY << Y(p, q) << " ";
+								}
+								fs_viewY << std::endl;
+							}
+						}
+						fs_viewY.close();
+					}
 					fs_[i] = TPSFunction(X, Y, lambda_i, kappa_i);
 					for (int j = 0, k1 = 0; j < P; k1 += _m[j], j++) {
 						if (_alpha[j] == i) {
@@ -1141,6 +1169,205 @@ namespace gmnr{
 						} else if (_beta[j] == i) {
 							current_Y.block(k1, 0, _m[j], d) = fs_[i].evaluate(_Y.block(k1, 0, _m[j], d));
 						}
+					}
+					if (iter_num == _max_iter_num - 1 && d == 3) {
+
+						Matrix current_viewX(An[i], d), current_viewY(An[i], d);
+						for (int j = 0, k1 = 0, k2 = 0; j < P; k1 += _m[j], j++) {
+							if (_alpha[j] == i) {
+								current_viewX.block(k2, 0, _m[j], d) = current_X.block(k1, 0, _m[j], d);
+								current_viewY.block(k2, 0, _m[j], d) = current_Y.block(k1, 0, _m[j], d);
+								k2 += _m[j];
+							} else if (_beta[j] == i) {
+								current_viewX.block(k2, 0, _m[j], d) = current_Y.block(k1, 0, _m[j], d);
+								current_viewY.block(k2, 0, _m[j], d) = current_X.block(k1, 0, _m[j], d);
+								k2 += _m[j];
+							}
+						}
+						std::stringstream ss_current_viewX;
+						ss_current_viewX << "current_viewX_" << i << ".xyz";
+						std::fstream fs_current_viewX(ss_current_viewX.str().c_str(), std::ios::out);
+						if(fs_current_viewX) {
+							for(int p = 0; p < current_viewX.rows(); p++) {
+								for (int q = 0; q < current_viewX.cols(); q++) {
+									fs_current_viewX << current_viewX(p, q) << " ";
+								}
+								fs_current_viewX << std::endl;
+							}
+						}
+						fs_current_viewX.close();
+						std::stringstream ss_current_viewY;
+						ss_current_viewY << "current_viewY_" << i << ".xyz";
+						std::fstream fs_current_viewY(ss_current_viewY.str().c_str(), std::ios::out);
+						if(fs_current_viewY) {
+							for(int p = 0; p < current_viewY.rows(); p++) {
+								for (int q = 0; q < current_viewY.cols(); q++) {
+									fs_current_viewY << current_viewY(p, q) << " ";
+								}
+								fs_current_viewY << std::endl;
+							}
+						}
+						fs_current_viewY.close();
+					}
+				}
+				current_rate *= iter_rate;
+			}
+	}
+
+	ApproxiMultiTPS::ApproxiMultiTPS() : MultiTPS() {}
+
+	ApproxiMultiTPS::ApproxiMultiTPS(const Matrix &_X, 
+		const Matrix &_Y,
+		const std::vector<int> &_m,
+		const std::vector<int> &_alpha,
+		const std::vector<int> &_beta,
+		const Vector &_kappa,
+		const Vector &_lambda,
+		const std::vector<int> &_na,
+		const std::vector<int> &_nb,
+		const int &_max_iter_num,
+		const Scalar &_iter_rate) {
+			int P = _m.size(), N = _lambda.size();
+			int d = _X.cols();
+			int m = 0; // or m = _X.rows();
+			for (int i = 0; i < P; i++) {
+				m += _m[i];
+			}
+
+			std::cout << "N = " << N << std::endl;
+			std::cout << "P = " << P << std::endl;
+			std::cout << "m = " << m << std::endl;
+			for (int i = 0; i < P; i++) {
+				std::cout << "( " << _alpha[i] << ", " << _beta[i] << ") " << _m[i] << std::endl;
+			}
+			std::cout << "_X : rows = " << _X.rows() << " cols = " << _X.cols() << std::endl;
+			std::cout << "_Y : rows = " << _Y.rows() << " cols = " << _Y.cols() << std::endl;
+
+			//Initialization
+			std::vector<int> An(N, 0), Xn(N, 0);
+			for (int i = 0; i < P; i++) {
+				An[_alpha[i]] += _na[i];
+				An[_beta[i]] += _nb[i];
+				Xn[_alpha[i]] += _m[i];
+				Xn[_beta[i]] += _m[i];
+			}
+			fs_.resize(N);
+			Matrix current_X(_X), current_Y(_Y);
+
+			Scalar min_lambda = _lambda[0], min_kappa = _kappa[0];
+			for (int i = 1; i < N; i++) {
+				min_lambda = min_lambda < _lambda[i] ? min_lambda : _lambda[i];
+				min_kappa = min_kappa < _kappa[i] ? min_kappa : _kappa[i];
+			}
+			Scalar iter_rate = _iter_rate > 0 ? _iter_rate : pow(min_kappa, 1.0/_max_iter_num);
+			Scalar current_rate = 1.0;
+			for(int iter_num = 0;  iter_num < _max_iter_num; iter_num++) {
+				for (int i = 0; i < N; i++) {
+					Matrix X(Xn[i], d), Y(Xn[i], d);
+					for (int j = 0, k1 = 0, k2 = 0; j < P; k1 += _m[j], j++) {
+						if (_alpha[j] == i) {
+							X.block(k2, 0, _na[j], d) = _X.block(k1, 0, _na[j], d);
+							if(iter_num == 0) Y.block(k2, 0, _na[j], d) = _Y.block(k1, 0, _na[j], d);
+							else Y.block(k2, 0, _na[j], d) = current_Y.block(k1, 0, _na[j], d);
+							k2 += _na[j];
+						} else if (_beta[j] == i) {
+							X.block(k2, 0, _nb[j], d) = _Y.block(k1 + _m[j] - _nb[j], 0, _nb[j], d);
+							if(iter_num == 0) Y.block(k2, 0, _nb[j], d) = _X.block(k1 + _m[j] - _nb[j], 0, _nb[j], d);
+							else Y.block(k2, 0, _nb[j], d) = current_X.block(k1 + _m[j] - _nb[j], 0, _nb[j], d);
+							k2 += _nb[j];
+						}
+					}
+					for (int j = 0, k1 = 0, k2 = An[i]; j < P; k1 += _m[j], j++) {
+						if (_alpha[j] == i) {
+							X.block(k2, 0, _m[j] - _na[j], d) = _X.block(k1 + _na[j], 0, _m[j] - _na[j], d);
+							if(iter_num == 0) Y.block(k2, 0, _m[j] - _na[j], d) = _Y.block(k1 + _na[j], 0, _m[j] - _na[j], d);
+							else Y.block(k2, 0, _m[j] - _na[j], d) = current_Y.block(k1 + _na[j], 0, _m[j] - _na[j], d);
+							k2 += _m[j] - _na[j];
+						} else if (_beta[j] == i) {
+							X.block(k2, 0, _m[j] - _nb[j], d) = _Y.block(k1, 0, _m[j] - _nb[j], d);
+							if(iter_num == 0) Y.block(k2, 0, _m[j] - _nb[j], d) = _X.block(k1, 0, _m[j] - _nb[j], d);
+							else Y.block(k2, 0, _m[j] - _nb[j], d) = current_X.block(k1, 0, _m[j] - _nb[j], d);
+							k2 += _m[j] - _nb[j];
+						}
+					}
+					Scalar lambda_i;
+					if(An[i] > 100) lambda_i = _lambda[i];
+					else lambda_i = _lambda[i] * ((1.0 / min_kappa * current_rate > 1.0) ? (1.0 / min_kappa * current_rate) : 1.0); // _lambda[i] * (min_lambda / min_kappa) * (1.0 / min_lambda * current_rate)
+					Scalar kappa_i =  _kappa[i] * ((1.0 / min_kappa * current_rate > 1.0) ? (1.0 / min_kappa * current_rate) : 1.0);
+					std::cout << "view " << i << " : kappa = " << kappa_i << ", lambda = " << lambda_i << std::endl;
+					if (iter_num == 0 && d == 3) {
+						std::stringstream ss_viewX;
+						ss_viewX << "viewX_" << i << ".xyz";
+						std::fstream fs_viewX(ss_viewX.str().c_str(), std::ios::out);
+						if(fs_viewX) {
+							for(int p = 0; p < X.rows(); p++) {
+								for (int q = 0; q < X.cols(); q++) {
+									fs_viewX << X(p, q) << " ";
+								}
+								fs_viewX << std::endl;
+							}
+						}
+						fs_viewX.close();
+						std::stringstream ss_viewY;
+						ss_viewY << "viewY_" << i << ".xyz";
+						std::fstream fs_viewY(ss_viewY.str().c_str(), std::ios::out);
+						if(fs_viewY) {
+							for(int p = 0; p < Y.rows(); p++) {
+								for (int q = 0; q < Y.cols(); q++) {
+									fs_viewY << Y(p, q) << " ";
+								}
+								fs_viewY << std::endl;
+							}
+						}
+						fs_viewY.close();
+					}
+					//fs_[i] = TPSFunction(X, Y, lambda_i, kappa_i);
+					fs_[i] = ApproxiTPSFunction(X, Y, lambda_i, kappa_i, An[i]);
+					for (int j = 0, k1 = 0; j < P; k1 += _m[j], j++) {
+						if (_alpha[j] == i) {
+							current_X.block(k1, 0, _m[j], d) = fs_[i].evaluate(_X.block(k1, 0, _m[j], d));
+						} else if (_beta[j] == i) {
+							current_Y.block(k1, 0, _m[j], d) = fs_[i].evaluate(_Y.block(k1, 0, _m[j], d));
+						}
+					}
+					if (iter_num == _max_iter_num - 1 && d == 3) {
+
+						Matrix current_viewX(Xn[i], d), current_viewY(Xn[i], d);
+						for (int j = 0, k1 = 0, k2 = 0; j < P; k1 += _m[j], j++) {
+							if (_alpha[j] == i) {
+								current_viewX.block(k2, 0, _m[j], d) = current_X.block(k1, 0, _m[j], d);
+								current_viewY.block(k2, 0, _m[j], d) = current_Y.block(k1, 0, _m[j], d);
+								k2 += _m[j];
+							} else if (_beta[j] == i) {
+								current_viewX.block(k2, 0, _m[j], d) = current_Y.block(k1, 0, _m[j], d);
+								current_viewY.block(k2, 0, _m[j], d) = current_X.block(k1, 0, _m[j], d);
+								k2 += _m[j];
+							}
+						}
+						std::stringstream ss_current_viewX;
+						ss_current_viewX << "current_viewX_" << i << ".xyz";
+						std::fstream fs_current_viewX(ss_current_viewX.str().c_str(), std::ios::out);
+						if(fs_current_viewX) {
+							for(int p = 0; p < current_viewX.rows(); p++) {
+								for (int q = 0; q < current_viewX.cols(); q++) {
+									fs_current_viewX << current_viewX(p, q) << " ";
+								}
+								fs_current_viewX << std::endl;
+							}
+						}
+						fs_current_viewX.close();
+						std::stringstream ss_current_viewY;
+						ss_current_viewY << "current_viewY_" << i << ".xyz";
+						std::fstream fs_current_viewY(ss_current_viewY.str().c_str(), std::ios::out);
+						if(fs_current_viewY) {
+							for(int p = 0; p < current_viewY.rows(); p++) {
+								for (int q = 0; q < current_viewY.cols(); q++) {
+									fs_current_viewY << current_viewY(p, q) << " ";
+								}
+								fs_current_viewY << std::endl;
+							}
+						}
+						fs_current_viewY.close();
 					}
 				}
 				current_rate *= iter_rate;

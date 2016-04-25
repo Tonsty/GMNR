@@ -55,70 +55,70 @@ namespace gmnr{
 		Y /= 300.0;
 		Z /= 300.0;
 
-		gmnr::PointSet2D input_X(12, 2), input_Y(12, 2);
-		input_X << X.block(4, 0, 4, 2), 
-			Y.block(4, 0, 4, 2), 
-			Z.block(4, 0, 4, 2); 
-		input_Y << Y.block(0, 0, 4, 2),
-			Z.block(0, 0, 4, 2),
-			X.block(0, 0, 4, 2);
-
-		std::vector<int> m(3);
-		m[0] = 4;
-		m[1] = 4;
-		m[2] = 4;
-		std::vector<int> alpha(3);
-		alpha[0] = 0;
-		alpha[1] = 1;
-		alpha[2] = 2;
-		std::vector<int> beta(3);
-		beta[0] = 1;
-		beta[1] = 2;
-		beta[2] = 0;
-		Vector kappa(3);
-		kappa << kappa_1, kappa_2, kappa_3;
-		Vector lambda(3);
-		lambda << lambda_1, lambda_2, lambda_3;
-
-		//gmnr::PointSet2D input_X(24, 2), input_Y(24, 2);
+		//gmnr::PointSet2D input_X(12, 2), input_Y(12, 2);
 		//input_X << X.block(4, 0, 4, 2), 
-		//	Y.block(4, 0, 4, 2), 
-		//	Z.block(4, 0, 4, 2),
-		//	X.block(4, 0, 4, 2), 
 		//	Y.block(4, 0, 4, 2), 
 		//	Z.block(4, 0, 4, 2); 
 		//input_Y << Y.block(0, 0, 4, 2),
 		//	Z.block(0, 0, 4, 2),
-		//	X.block(0, 0, 4, 2),
-		//	Y.block(0, 0, 4, 2),
-		//	Z.block(0, 0, 4, 2),
 		//	X.block(0, 0, 4, 2);
 
-		//std::vector<int> m(6);
+		//std::vector<int> m(3);
 		//m[0] = 4;
 		//m[1] = 4;
 		//m[2] = 4;
-		//m[3] = 4;
-		//m[4] = 4;
-		//m[5] = 4;
-		//std::vector<int> alpha(6);
+		//std::vector<int> alpha(3);
 		//alpha[0] = 0;
 		//alpha[1] = 1;
 		//alpha[2] = 2;
-		//alpha[3] = 0;
-		//alpha[4] = 1;
-		//alpha[5] = 2;
-		//std::vector<int> beta(6);
+		//std::vector<int> beta(3);
 		//beta[0] = 1;
 		//beta[1] = 2;
 		//beta[2] = 0;
-		//beta[3] = 1;
-		//beta[4] = 2;
-		//beta[5] = 0;
 		//Vector kappa(3);
 		//kappa << kappa_1, kappa_2, kappa_3;
 		//Vector lambda(3);
 		//lambda << lambda_1, lambda_2, lambda_3;
+
+		gmnr::PointSet2D input_X(24, 2), input_Y(24, 2);
+		input_X << X.block(4, 0, 4, 2), 
+			Y.block(4, 0, 4, 2), 
+			Z.block(4, 0, 4, 2),
+			X.block(4, 0, 4, 2), 
+			Y.block(4, 0, 4, 2), 
+			Z.block(4, 0, 4, 2); 
+		input_Y << Y.block(0, 0, 4, 2),
+			Z.block(0, 0, 4, 2),
+			X.block(0, 0, 4, 2),
+			Y.block(0, 0, 4, 2),
+			Z.block(0, 0, 4, 2),
+			X.block(0, 0, 4, 2);
+
+		std::vector<int> m(6);
+		m[0] = 4;
+		m[1] = 4;
+		m[2] = 4;
+		m[3] = 4;
+		m[4] = 4;
+		m[5] = 4;
+		std::vector<int> alpha(6);
+		alpha[0] = 0;
+		alpha[1] = 1;
+		alpha[2] = 2;
+		alpha[3] = 0;
+		alpha[4] = 1;
+		alpha[5] = 2;
+		std::vector<int> beta(6);
+		beta[0] = 1;
+		beta[1] = 2;
+		beta[2] = 0;
+		beta[3] = 1;
+		beta[4] = 2;
+		beta[5] = 0;
+		Vector kappa(3);
+		kappa << kappa_1, kappa_2, kappa_3;
+		Vector lambda(3);
+		lambda << lambda_1, lambda_2, lambda_3;
 
 		MultiTPS mtps(input_X, input_Y, m, alpha, beta, kappa, lambda, max_iter_num, iter_rate);
 		//std::cout << "mtps = \n" << mtps << std::endl;
