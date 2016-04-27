@@ -330,12 +330,12 @@ int main(int argc, char** argv){
 	nb[1] = 0;
 	nb[2] = 0;
 	Vector kappa(3);
-	kappa << 0.001, 0.001, 0.001;
+	kappa << 0.01, 0.01, 0.01;
 	Vector lambda(3);
-	lambda << 0.0001, 0.0001, 0.0001;
+	lambda << 0.001, 0.001, 0.001;
 
-	MultiTPS mtps(X, Y, m, alpha, beta, kappa, lambda, 10);
-	//ApproxiMultiTPS mtps(X, Y, m, alpha, beta, kappa, lambda, na, nb, 10);
+	//MultiTPS mtps(X, Y, m, alpha, beta, kappa, lambda, 10);
+	ApproxiMultiTPS mtps(X, Y, m, alpha, beta, kappa, lambda, na, nb, 10);
 	//std::cout << "mtps = \n" << mtps << std::endl;
 	TPSFunction f1 = mtps.getfs()[0], f2 = mtps.getfs()[1], f3 = mtps.getfs()[2];
 
