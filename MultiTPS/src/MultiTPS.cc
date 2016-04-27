@@ -4,6 +4,8 @@
 #include <math.h>
 #include <Eigen/Core>
 #include <GMNR/MultiTPS.h>
+#include <GMNR/io/matrix_io.h>
+#include <GMNR/time.h>
 
 namespace gmnr{
 
@@ -1135,34 +1137,20 @@ namespace gmnr{
 					if(An[i] > 100) lambda_i = _lambda[i];
 					else lambda_i = _lambda[i] * ((1.0 / min_kappa * current_rate > 1.0) ? (1.0 / min_kappa * current_rate) : 1.0); // _lambda[i] * (min_lambda / min_kappa) * (1.0 / min_lambda * current_rate)
 					Scalar kappa_i =  _kappa[i] * ((1.0 / min_kappa * current_rate > 1.0) ? (1.0 / min_kappa * current_rate) : 1.0);
-					std::cout << "view " << i << " : kappa = " << kappa_i << ", lambda = " << lambda_i << std::endl;
-					if (iter_num == 0 && d == 3) {
-						std::stringstream ss_viewX;
-						ss_viewX << "viewX_" << i << ".xyz";
-						std::fstream fs_viewX(ss_viewX.str().c_str(), std::ios::out);
-						if(fs_viewX) {
-							for(int p = 0; p < X.rows(); p++) {
-								for (int q = 0; q < X.cols(); q++) {
-									fs_viewX << X(p, q) << " ";
-								}
-								fs_viewX << std::endl;
-							}
-						}
-						fs_viewX.close();
-						std::stringstream ss_viewY;
-						ss_viewY << "viewY_" << i << ".xyz";
-						std::fstream fs_viewY(ss_viewY.str().c_str(), std::ios::out);
-						if(fs_viewY) {
-							for(int p = 0; p < Y.rows(); p++) {
-								for (int q = 0; q < Y.cols(); q++) {
-									fs_viewY << Y(p, q) << " ";
-								}
-								fs_viewY << std::endl;
-							}
-						}
-						fs_viewY.close();
-					}
+					std::cout << "iteration " << iter_num << ", view " << i << " : kappa = " << kappa_i << ", lambda = " << lambda_i << std::endl;
+					//if (iter_num == 0 && d == 3) {
+					//	std::stringstream ss_viewX;
+					//	ss_viewX << "debug/viewX_" << i << ".xyz";
+					//	write_matrix(ss_viewX.str(), X);
+					//	std::stringstream ss_viewY;
+					//	ss_viewY << "debug/viewY_" << i << ".xyz";
+					//	write_matrix(ss_viewY.str(), Y);
+					//}
+					timestamp opt_start = now();
 					fs_[i] = TPSFunction(X, Y, lambda_i, kappa_i);
+					float opt_time = now() - opt_start;
+					std::cout << "TPS Optimization time: " << opt_time << std::endl;
+					opt_start = now();
 					for (int j = 0, k1 = 0; j < P; k1 += _m[j], j++) {
 						if (_alpha[j] == i) {
 							current_X.block(k1, 0, _m[j], d) = fs_[i].evaluate(_X.block(k1, 0, _m[j], d));
@@ -1170,45 +1158,29 @@ namespace gmnr{
 							current_Y.block(k1, 0, _m[j], d) = fs_[i].evaluate(_Y.block(k1, 0, _m[j], d));
 						}
 					}
-					if (iter_num == _max_iter_num - 1 && d == 3) {
+					opt_time = now() - opt_start;
+					std::cout << "TPS Update time: " << opt_time << std::endl;
+					//if (iter_num == _max_iter_num - 1 && d == 3) {
 
-						Matrix current_viewX(An[i], d), current_viewY(An[i], d);
-						for (int j = 0, k1 = 0, k2 = 0; j < P; k1 += _m[j], j++) {
-							if (_alpha[j] == i) {
-								current_viewX.block(k2, 0, _m[j], d) = current_X.block(k1, 0, _m[j], d);
-								current_viewY.block(k2, 0, _m[j], d) = current_Y.block(k1, 0, _m[j], d);
-								k2 += _m[j];
-							} else if (_beta[j] == i) {
-								current_viewX.block(k2, 0, _m[j], d) = current_Y.block(k1, 0, _m[j], d);
-								current_viewY.block(k2, 0, _m[j], d) = current_X.block(k1, 0, _m[j], d);
-								k2 += _m[j];
-							}
-						}
-						std::stringstream ss_current_viewX;
-						ss_current_viewX << "current_viewX_" << i << ".xyz";
-						std::fstream fs_current_viewX(ss_current_viewX.str().c_str(), std::ios::out);
-						if(fs_current_viewX) {
-							for(int p = 0; p < current_viewX.rows(); p++) {
-								for (int q = 0; q < current_viewX.cols(); q++) {
-									fs_current_viewX << current_viewX(p, q) << " ";
-								}
-								fs_current_viewX << std::endl;
-							}
-						}
-						fs_current_viewX.close();
-						std::stringstream ss_current_viewY;
-						ss_current_viewY << "current_viewY_" << i << ".xyz";
-						std::fstream fs_current_viewY(ss_current_viewY.str().c_str(), std::ios::out);
-						if(fs_current_viewY) {
-							for(int p = 0; p < current_viewY.rows(); p++) {
-								for (int q = 0; q < current_viewY.cols(); q++) {
-									fs_current_viewY << current_viewY(p, q) << " ";
-								}
-								fs_current_viewY << std::endl;
-							}
-						}
-						fs_current_viewY.close();
-					}
+					//	Matrix current_viewX(An[i], d), current_viewY(An[i], d);
+					//	for (int j = 0, k1 = 0, k2 = 0; j < P; k1 += _m[j], j++) {
+					//		if (_alpha[j] == i) {
+					//			current_viewX.block(k2, 0, _m[j], d) = current_X.block(k1, 0, _m[j], d);
+					//			current_viewY.block(k2, 0, _m[j], d) = current_Y.block(k1, 0, _m[j], d);
+					//			k2 += _m[j];
+					//		} else if (_beta[j] == i) {
+					//			current_viewX.block(k2, 0, _m[j], d) = current_Y.block(k1, 0, _m[j], d);
+					//			current_viewY.block(k2, 0, _m[j], d) = current_X.block(k1, 0, _m[j], d);
+					//			k2 += _m[j];
+					//		}
+					//	}
+					//	std::stringstream ss_current_viewX;
+					//	ss_current_viewX << "debug/current_viewX_" << i << ".xyz";
+					//	write_matrix(ss_current_viewX.str(), current_viewX);
+					//	std::stringstream ss_current_viewY;
+					//	ss_current_viewY << "debug/current_viewY_" << i << ".xyz";
+					//	write_matrix(ss_current_viewY.str(), current_viewY);
+					//}
 				}
 				current_rate *= iter_rate;
 			}
@@ -1294,35 +1266,20 @@ namespace gmnr{
 					if(An[i] > 100) lambda_i = _lambda[i];
 					else lambda_i = _lambda[i] * ((1.0 / min_kappa * current_rate > 1.0) ? (1.0 / min_kappa * current_rate) : 1.0); // _lambda[i] * (min_lambda / min_kappa) * (1.0 / min_lambda * current_rate)
 					Scalar kappa_i =  _kappa[i] * ((1.0 / min_kappa * current_rate > 1.0) ? (1.0 / min_kappa * current_rate) : 1.0);
-					std::cout << "view " << i << " : kappa = " << kappa_i << ", lambda = " << lambda_i << std::endl;
-					if (iter_num == 0 && d == 3) {
-						std::stringstream ss_viewX;
-						ss_viewX << "viewX_" << i << ".xyz";
-						std::fstream fs_viewX(ss_viewX.str().c_str(), std::ios::out);
-						if(fs_viewX) {
-							for(int p = 0; p < X.rows(); p++) {
-								for (int q = 0; q < X.cols(); q++) {
-									fs_viewX << X(p, q) << " ";
-								}
-								fs_viewX << std::endl;
-							}
-						}
-						fs_viewX.close();
-						std::stringstream ss_viewY;
-						ss_viewY << "viewY_" << i << ".xyz";
-						std::fstream fs_viewY(ss_viewY.str().c_str(), std::ios::out);
-						if(fs_viewY) {
-							for(int p = 0; p < Y.rows(); p++) {
-								for (int q = 0; q < Y.cols(); q++) {
-									fs_viewY << Y(p, q) << " ";
-								}
-								fs_viewY << std::endl;
-							}
-						}
-						fs_viewY.close();
-					}
-					//fs_[i] = TPSFunction(X, Y, lambda_i, kappa_i);
+					std::cout << "iteration " << iter_num << ", view " << i << " : kappa = " << kappa_i << ", lambda = " << lambda_i << std::endl;
+					//if (iter_num == 0 && d == 3) {
+					//	std::stringstream ss_viewX;
+					//	ss_viewX << "debug/viewX_" << i << ".xyz";
+					//	write_matrix(ss_viewX.str(), X);
+					//	std::stringstream ss_viewY;
+					//	ss_viewY << "debug/viewY_" << i << ".xyz";
+					//	write_matrix(ss_viewY.str(), Y);
+					//}
+					timestamp opt_start = now();
 					fs_[i] = ApproxiTPSFunction(X, Y, lambda_i, kappa_i, An[i]);
+					float opt_time = now() - opt_start;
+					std::cout << "TPS Optimization time: " << opt_time << std::endl;
+					opt_start = now();
 					for (int j = 0, k1 = 0; j < P; k1 += _m[j], j++) {
 						if (_alpha[j] == i) {
 							current_X.block(k1, 0, _m[j], d) = fs_[i].evaluate(_X.block(k1, 0, _m[j], d));
@@ -1330,45 +1287,29 @@ namespace gmnr{
 							current_Y.block(k1, 0, _m[j], d) = fs_[i].evaluate(_Y.block(k1, 0, _m[j], d));
 						}
 					}
-					if (iter_num == _max_iter_num - 1 && d == 3) {
+					opt_time = now() - opt_start;
+					std::cout << "TPS Update time: " << opt_time << std::endl;
+					//if (iter_num == _max_iter_num - 1 && d == 3) {
 
-						Matrix current_viewX(Xn[i], d), current_viewY(Xn[i], d);
-						for (int j = 0, k1 = 0, k2 = 0; j < P; k1 += _m[j], j++) {
-							if (_alpha[j] == i) {
-								current_viewX.block(k2, 0, _m[j], d) = current_X.block(k1, 0, _m[j], d);
-								current_viewY.block(k2, 0, _m[j], d) = current_Y.block(k1, 0, _m[j], d);
-								k2 += _m[j];
-							} else if (_beta[j] == i) {
-								current_viewX.block(k2, 0, _m[j], d) = current_Y.block(k1, 0, _m[j], d);
-								current_viewY.block(k2, 0, _m[j], d) = current_X.block(k1, 0, _m[j], d);
-								k2 += _m[j];
-							}
-						}
-						std::stringstream ss_current_viewX;
-						ss_current_viewX << "current_viewX_" << i << ".xyz";
-						std::fstream fs_current_viewX(ss_current_viewX.str().c_str(), std::ios::out);
-						if(fs_current_viewX) {
-							for(int p = 0; p < current_viewX.rows(); p++) {
-								for (int q = 0; q < current_viewX.cols(); q++) {
-									fs_current_viewX << current_viewX(p, q) << " ";
-								}
-								fs_current_viewX << std::endl;
-							}
-						}
-						fs_current_viewX.close();
-						std::stringstream ss_current_viewY;
-						ss_current_viewY << "current_viewY_" << i << ".xyz";
-						std::fstream fs_current_viewY(ss_current_viewY.str().c_str(), std::ios::out);
-						if(fs_current_viewY) {
-							for(int p = 0; p < current_viewY.rows(); p++) {
-								for (int q = 0; q < current_viewY.cols(); q++) {
-									fs_current_viewY << current_viewY(p, q) << " ";
-								}
-								fs_current_viewY << std::endl;
-							}
-						}
-						fs_current_viewY.close();
-					}
+					//	Matrix current_viewX(Xn[i], d), current_viewY(Xn[i], d);
+					//	for (int j = 0, k1 = 0, k2 = 0; j < P; k1 += _m[j], j++) {
+					//		if (_alpha[j] == i) {
+					//			current_viewX.block(k2, 0, _m[j], d) = current_X.block(k1, 0, _m[j], d);
+					//			current_viewY.block(k2, 0, _m[j], d) = current_Y.block(k1, 0, _m[j], d);
+					//			k2 += _m[j];
+					//		} else if (_beta[j] == i) {
+					//			current_viewX.block(k2, 0, _m[j], d) = current_Y.block(k1, 0, _m[j], d);
+					//			current_viewY.block(k2, 0, _m[j], d) = current_X.block(k1, 0, _m[j], d);
+					//			k2 += _m[j];
+					//		}
+					//	}
+					//	std::stringstream ss_current_viewX;
+					//	ss_current_viewX << "debug/current_viewX_" << i << ".xyz";
+					//	write_matrix(ss_current_viewX.str(), current_viewX);
+					//	std::stringstream ss_current_viewY;
+					//	ss_current_viewY << "debug/current_viewY_" << i << ".xyz";
+					//	write_matrix(ss_current_viewY.str(), current_viewY);
+					//}
 				}
 				current_rate *= iter_rate;
 			}

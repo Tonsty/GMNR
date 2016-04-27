@@ -2,6 +2,7 @@
 
 #include <GMNR/common.h>
 #include <GMNR/math/GreenFunction.h>
+#include <GMNR/time.h>
 #include <GMNR/ThinPlateSplines.h>
 
 namespace gmnr{
@@ -59,6 +60,8 @@ namespace gmnr{
 			X.transpose(), Matrix::Zero(d+1, d+1);
 		equationR << _Y + _kappa * _X, Matrix::Zero(d+1, d);
 
+		timestamp opt_start = now();
+
 		//Eigen::FullPivLU<Matrix> fullLU(equationL);
 		//solution = fullLU.solve(equationR);
 
@@ -70,6 +73,9 @@ namespace gmnr{
 
 		//Eigen::LDLT<Matrix> ldlt(equationL);
 		//solution = ldlt.solve(equationR);
+
+		float equation_solution_time = now() - opt_start;
+		std::cout << "TPS equation " << equationL.rows() << " * " << equationL.cols() << " solution time: " << equation_solution_time << std::endl;
 
 		A_ = solution.block(0, 0, m, d);
 		B_ = solution.block(m, 0, d+1, d);
@@ -144,11 +150,16 @@ namespace gmnr{
 				X.topRows(n).transpose(), Matrix::Zero(d+1, d+1);
 			equationR << _Y + _kappa * _X, Matrix::Zero(d+1, d);
 
+			timestamp opt_start = now();
+
 			//Eigen::FullPivLU<Matrix> fullLU(equationL);
 			//solution = fullLU.solve(equationR);
 
 			Eigen::HouseholderQR<Matrix> qr(equationL);
 			solution = qr.solve(equationR);
+			
+			float equation_solution_time = now() - opt_start;
+			std::cout << "TPS equation " << equationL.rows() << " * " << equationL.cols() << " solution time: " << equation_solution_time << std::endl;
 
 			A_ = solution.block(0, 0, n, d);
 			B_ = solution.block(n, 0, d+1, d);
