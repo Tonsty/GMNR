@@ -1210,7 +1210,7 @@ namespace gmnr{
 			std::cout << "P = " << P << std::endl;
 			std::cout << "m = " << m << std::endl;
 			for (int i = 0; i < P; i++) {
-				std::cout << "( " << _alpha[i] << ", " << _beta[i] << ") " << _m[i] << std::endl;
+				std::cout << "( " << _alpha[i] << ", " << _beta[i] << ") [" << _na[i] << ", " << _nb[i] << "] "<< _m[i] << std::endl;
 			}
 			std::cout << "_X : rows = " << _X.rows() << " cols = " << _X.cols() << std::endl;
 			std::cout << "_Y : rows = " << _Y.rows() << " cols = " << _Y.cols() << std::endl;
