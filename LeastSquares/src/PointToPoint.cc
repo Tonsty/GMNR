@@ -33,8 +33,8 @@ namespace gmnr{
 		Point3D X_mean = _X.colwise().sum() * one_over_N;
 		Point3D Y_mean = _Y.colwise().sum() * one_over_N;
 
-		//std::cout << "X_mean = \n" << X_mean << std::endl; 
-		//std::cout << "Y_mean = \n" << Y_mean << std::endl; 
+		//std::cerr << "X_mean = \n" << X_mean << std::endl; 
+		//std::cerr << "Y_mean = \n" << Y_mean << std::endl; 
 
 		PointSet3D P = _X, Q = _Y;
 		for (int i = 0; i < N; i++) P.row(i) -= X_mean.transpose();
@@ -45,12 +45,12 @@ namespace gmnr{
 			H += Q.row(i).transpose() * P.row(i);
 			//H += ( _Y.row(i).transpose() - Y_mean ) * (_X.row(i) - X_mean.transpose());
 		}
-		//std::cout << "H = \n" << H << std::endl; 
+		//std::cerr << "H = \n" << H << std::endl; 
 
 		Eigen::JacobiSVD<Matrix> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
 		R_ = svd.matrixV() * svd.matrixU().transpose();
 
-		//std::cout << "R.determinant() = \n" << R_.determinant() << std::endl; 
+		//std::cerr << "R.determinant() = \n" << R_.determinant() << std::endl; 
 		if (R_.determinant() < 0 ){ //det(R) == -1
 			if ( svd.nonzeroSingularValues() < 3) //One of the singular values (lambda3, say) of H is zero
 			{
@@ -72,7 +72,7 @@ namespace gmnr{
 		}else{
 			rms_error_ = -2; // uncalculated
 		}
-		std::cout << "rms_error = \n" << rms_error_ << std::endl; 
+		std::cerr << "rms_error = \n" << rms_error_ << std::endl; 
 	}
 
 	//-----------------------------------------------------------------------------------------------------------------------------------
@@ -99,8 +99,8 @@ namespace gmnr{
 		const Vector X_mean = _X.colwise().sum() * one_over_n;
 		const Vector Y_mean = _Y.colwise().sum() * one_over_n;
 
-		//std::cout << "X_mean = \n" << X_mean << std::endl; 
-		//std::cout << "Y_mean = \n" << Y_mean << std::endl; 
+		//std::cerr << "X_mean = \n" << X_mean << std::endl; 
+		//std::cerr << "Y_mean = \n" << Y_mean << std::endl; 
 
 		Matrix X_demean = _X;
 		Matrix Y_demean = _Y;
@@ -119,22 +119,22 @@ namespace gmnr{
 			XY_covariance += (_Y.row(i).transpose() - Y_mean) * (_X.row(i) - X_mean.transpose());
 		}
 		XY_covariance *= one_over_n;
-		//std::cout << "XY_covariance = \n" << XY_covariance << std::endl;
+		//std::cerr << "XY_covariance = \n" << XY_covariance << std::endl;
 
 		Eigen::JacobiSVD<Matrix> svd(XY_covariance, Eigen::ComputeThinU | Eigen::ComputeThinV);
-		//std::cout << "UDV^t = \n" << svd.matrixU() * svd.singularValues().asDiagonal() * svd.matrixV().transpose() << std::endl;
+		//std::cerr << "UDV^t = \n" << svd.matrixU() * svd.singularValues().asDiagonal() * svd.matrixV().transpose() << std::endl;
 
 		Vector D = svd.singularValues();
 		Vector S = Vector::Ones(m);
-		//std::cout << "S =\n" << S << std::endl;
-		//std::cout << "D =\n" << D << std::endl;
+		//std::cerr << "S =\n" << S << std::endl;
+		//std::cerr << "D =\n" << D << std::endl;
 
 		if (XY_covariance.determinant() <0) S(m-1) = -1;
 
 		//nsigned int svd_rank = svd.rank();
 		unsigned int svd_rank = 0; 
 		for (unsigned int i=0; i<m; ++i) if (!Eigen::internal::isMuchSmallerThan(D.coeff(i),D.coeff(0))) ++svd_rank;
-		//std::cout << "svd_rank = \n" << svd_rank << std::endl;
+		//std::cerr << "svd_rank = \n" << svd_rank << std::endl;
 		if (svd_rank == m-1){
 			if ( svd.matrixU().determinant() * svd.matrixV().determinant() > 0){ //det(U) * det(V) = 1 
 				R_.noalias() = svd.matrixU() * svd.matrixV().transpose();
@@ -167,7 +167,7 @@ namespace gmnr{
 			else rms_error_ = -2; // uncalculated
 		}
 
-		std::cout << "rms_error = \n" << rms_error_ << std::endl; 
+		std::cerr << "rms_error = \n" << rms_error_ << std::endl; 
 	}
 
 };

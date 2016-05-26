@@ -51,6 +51,14 @@ namespace gmnr{
 			return t_;
 		}
 
+		inline Matrix4D transfomation(){
+			Matrix4D tf = Matrix4D::Zero(4, 4);
+			tf.block(0,0,3,3) = R_;
+			tf.block(0,3,3,1) = t_;
+			tf(3, 3) = 1.0;
+			return tf;
+		}
+
 		//rms_error_ == -1 means the algorithm is faild!
 		//rms_error_ == -2 means the RMS error is not calculated!
 		inline Scalar rmsError(){
@@ -90,6 +98,15 @@ namespace gmnr{
 
 		inline Scalar scale(){
 			return c_;
+		}
+
+		inline Matrix transfomation(){
+			int dim = t_.size();
+			Matrix tf = Matrix::Zero(dim+1, dim+1);
+			tf.block(0,0,dim,dim) = c_*R_;
+			tf.block(0,dim,dim,1) = t_;
+			tf(dim, dim) = 1.0;
+			return tf;
 		}
 
 		inline Scalar rmsError(){

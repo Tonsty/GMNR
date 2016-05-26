@@ -51,6 +51,8 @@ namespace gmnr{
 
 		LIBTPS_API Matrix evaluate(const Matrix &_X) const;
 
+		static LIBTPS_API TPSFunction Identity(int _dim);
+
 		inline int variable_Dim() const { return X_.cols();}
 
 		inline int value_Dim() const { return A_.cols(); }

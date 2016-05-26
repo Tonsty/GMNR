@@ -49,6 +49,14 @@ namespace gmnr{
 			return t_;
 		}
 
+		inline Matrix4D transfomation(){
+			Matrix4D tf = Matrix4D::Zero(4, 4);
+			tf.block(0,0,3,3) = R_;
+			tf.block(0,3,3,1) = t_;
+			tf(3, 3) = 1.0;
+			return tf;
+		}
+
 		inline Scalar rmsError(){
 			return rms_error_;
 		}

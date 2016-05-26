@@ -23,6 +23,9 @@ namespace gmnr{
 	typedef Eigen::Matrix<Scalar, 3, 3> Matrix3D;
 	typedef Eigen::Matrix<Scalar, 3, 1> Vector3D;
 
+	typedef Eigen::Matrix<Scalar, 4, 4> Matrix4D;
+	typedef Eigen::Matrix<Scalar, 4, 1> Vector4D;	
+
 	typedef Vector3D Point3D;
 	typedef Vector3D Normal3D;
 

@@ -24,9 +24,9 @@ namespace gmnr{
 		const bool _calculate_rms_error, 
 		const Vector &_w){
 
-		//std::cout << "_s = \n" << _s << std::endl; 
-		//std::cout << "_d = \n" << _d << std::endl; 
-		//std::cout << "_n = \n" << _n << std::endl; 
+		//std::cerr << "_s = \n" << _s << std::endl; 
+		//std::cerr << "_d = \n" << _d << std::endl; 
+		//std::cerr << "_n = \n" << _n << std::endl; 
 			
 		int N = _s.rows();
 		Matrix A(N, 6);
@@ -51,7 +51,7 @@ namespace gmnr{
 		Quaternion R = AngleAxis(gamma, Vector3D::UnitZ()) * AngleAxis(beta, Vector3D::UnitY()) * AngleAxis(alpha, Vector3D::UnitX());
 		R_ = R.matrix();
 
-		//std::cout << "R = \n" << R_ << std::endl;
+		//std::cerr << "R = \n" << R_ << std::endl;
 
 		//R_(0,0) = cos(gamma) * cos(beta);
 		//R_(0,1) = -sin(gamma) * cos(alpha) + cos(gamma) * sin(beta) * sin(alpha);
@@ -65,7 +65,7 @@ namespace gmnr{
 		//R_(2,1) = cos(beta) * sin(alpha);
 		//R_(2,2) = cos(beta) * cos(alpha);
 
-		//std::cout << "R = \n" << R_ << std::endl;
+		//std::cerr << "R = \n" << R_ << std::endl;
 
 		t_ = x.block<3,1>(3,0);
 
@@ -76,7 +76,8 @@ namespace gmnr{
 		if (_calculate_rms_error){
 			rms_error_ = 0;
 			for(int i = 0; i < N; i++){
-				rms_error_ += (R_ * _s.row(i).transpose() + t_ - _d.row(i).transpose()).dot(_n.row(i));
+				Scalar temp_error = (R_ * _s.row(i).transpose() + t_ - _d.row(i).transpose()).dot(_n.row(i));
+				rms_error_ += temp_error * temp_error;
 			}
 			rms_error_ = sqrt((double)rms_error_/N);
 
@@ -86,7 +87,7 @@ namespace gmnr{
 			rms_error_approximate_ = -2; // uncalculated
 		}
 
-		std::cout << "rms_error = \n" << rms_error_ << std::endl;
-		std::cout << "rms_error_approximate = \n" << rms_error_approximate_ << std::endl; 
+		std::cerr << "rms_error = \n" << rms_error_ << std::endl;
+		std::cerr << "rms_error_approximate = \n" << rms_error_approximate_ << std::endl; 
 	}
 };

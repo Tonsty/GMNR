@@ -45,7 +45,7 @@ namespace gmnr{
 
 		int m = _X.rows(), d = _X.cols();
 
-		std::cout << "formula solver TPS bending energy : " << _lambda * (A_.transpose() * M * A_).trace() << std::endl;	
+		std::cerr << "formula solver TPS bending energy : " << _lambda * (A_.transpose() * M * A_).trace() << std::endl;	
 	}
 
 	void TPSFunction::direct_inverse_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa){
@@ -59,6 +59,9 @@ namespace gmnr{
 		equationL << S, (1 + _kappa) * X,
 			X.transpose(), Matrix::Zero(d+1, d+1);
 		equationR << _Y + _kappa * _X, Matrix::Zero(d+1, d);
+		//equationL << S, (1 + _kappa) * X,
+		//	1000 * _lambda * X.transpose(), Matrix::Identity(d+1, d+1) * _lambda;
+		//equationR << _Y + _kappa * _X, Matrix::Identity(d+1, d) * _lambda;
 
 		timestamp opt_start = now();
 
@@ -75,13 +78,13 @@ namespace gmnr{
 		//solution = ldlt.solve(equationR);
 
 		float equation_solution_time = now() - opt_start;
-		std::cout << "TPS equation " << equationL.rows() << " * " << equationL.cols() << " solution time: " << equation_solution_time << std::endl;
+		std::cerr << "TPS equation " << equationL.rows() << " * " << equationL.cols() << " solution time: " << equation_solution_time << std::endl;
 
 		A_ = solution.block(0, 0, m, d);
 		B_ = solution.block(m, 0, d+1, d);
 		X_ = _X;
 
-		//std::cout << "direct inverse solver TPS bending energy : " << _lambda * (A_.transpose() * M * A_).trace() << std::endl;
+		//std::cerr << "direct inverse solver TPS bending energy : " << _lambda * (A_.transpose() * M * A_).trace() << std::endl;
 	}
 
 	void TPSFunction::qr_solve_(const Matrix &_X, const Matrix &_Y, const Scalar &_lambda, const Scalar &_kappa){
@@ -91,16 +94,16 @@ namespace gmnr{
 		Matrix M = greenFunc(_X, _X);
 
 		Eigen::ColPivHouseholderQR<Matrix> qr(X);
-		//std::cout << "Rows = " << X.rows() << " Columns = " << X.cols() << std::endl;
-		//std::cout << "qr_rank = " << qr.rank() << std::endl;
+		//std::cerr << "Rows = " << X.rows() << " Columns = " << X.cols() << std::endl;
+		//std::cerr << "qr_rank = " << qr.rank() << std::endl;
 		Matrix P = qr.colsPermutation();
-		//std::cout << "P = \n" << P << std::endl;
+		//std::cerr << "P = \n" << P << std::endl;
 		Matrix Q = qr.matrixQ();
-		//std::cout << "Q = \n" << Q << std::endl;
+		//std::cerr << "Q = \n" << Q << std::endl;
 		Matrix Q1 = Q.block(0, 0, m, d+1), Q2 = Q.block(0, d+1, m, m-(d+1));
 		Matrix R = qr.matrixR().topLeftCorner(d+1, d+1).template triangularView<Eigen::Upper>();
 		//Matrix R = qr.matrixR().topLeftCorner(qr.rank(), qr.rank()).template triangularView<Eigen::Upper>();
-		//std::cout << "R = \n" << R << std::endl;
+		//std::cerr << "R = \n" << R << std::endl;
 
 		Matrix equationL = Q2.transpose() * (1 + _kappa) * M * Q2 + _lambda * Matrix::Identity(m - (d+1), m - (d+1));
 		Eigen::FullPivLU<Matrix> fullLU(equationL);
@@ -109,7 +112,7 @@ namespace gmnr{
 		B_ = P * 1.0 / (1 + _kappa) * R.inverse() * Q1.transpose() * ( _Y + _kappa * _X - (1 + _kappa) * M * A_); //Remember to permute B_ back with P!
 		X_ = _X;
 
-		std::cout << "qr solver TPS bending energy : " << _lambda * (A_.transpose() * M * A_).trace() << std::endl;
+		std::cerr << "qr solver TPS bending energy : " << _lambda * (A_.transpose() * M * A_).trace() << std::endl;
 	}
 
 	Matrix TPSFunction::evaluate(const Matrix &_X) const {
@@ -128,6 +131,10 @@ namespace gmnr{
 		rt += X * B_;
 
 		return rt;
+	}
+
+	TPSFunction TPSFunction::Identity(int _dim) {
+		return TPSFunction(Matrix(), Matrix(), Matrix::Identity(_dim+1, _dim));
 	}
 
 	ApproxiTPSFunction::ApproxiTPSFunction() : TPSFunction() {}
@@ -159,13 +166,13 @@ namespace gmnr{
 			solution = qr.solve(equationR);
 			
 			float equation_solution_time = now() - opt_start;
-			std::cout << "TPS equation " << equationL.rows() << " * " << equationL.cols() << " solution time: " << equation_solution_time << std::endl;
+			std::cerr << "TPS equation " << equationL.rows() << " * " << equationL.cols() << " solution time: " << equation_solution_time << std::endl;
 
 			A_ = solution.block(0, 0, n, d);
 			B_ = solution.block(n, 0, d+1, d);
 			X_ = _X.topRows(n);
 
-			//std::cout << "direct inverse solver TPS bending energy : " << _lambda * (A_.transpose() * M * A_).trace() << std::endl;
+			//std::cerr << "direct inverse solver TPS bending energy : " << _lambda * (A_.transpose() * M * A_).trace() << std::endl;
 		}
 	}
 
