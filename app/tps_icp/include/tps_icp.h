@@ -25,15 +25,18 @@ namespace gmnr {
 
 	};
 
-	struct Transform : boost::enable_shared_from_this<Transform> {
+	struct Transform {
 
 		typedef boost::shared_ptr<Transform> Ptr;
 
 		virtual void transform(pcl::PointCloud<pcl::PointXYZ>::Ptr in, pcl::PointCloud<pcl::PointXYZ>::Ptr out,
 			pcl::PointCloud<pcl::Normal>::Ptr in_norms = 0, pcl::PointCloud<pcl::Normal>::Ptr out_norms = 0) = 0;
 
-		virtual void transform(pcl::PointCloud<pcl::PointXYZ>::Ptr in, pcl::PointIndices::Ptr indices, pcl::PointCloud<pcl::PointXYZ>::Ptr out,
-			pcl::PointCloud<pcl::Normal>::Ptr in_norms = 0, pcl::PointCloud<pcl::Normal>::Ptr out_norms = 0) = 0;
+		void transform(pcl::PointCloud<pcl::PointXYZ>::Ptr in, pcl::PointIndices::Ptr indices, pcl::PointCloud<pcl::PointXYZ>::Ptr out,
+			pcl::PointCloud<pcl::Normal>::Ptr in_norms = 0, pcl::PointCloud<pcl::Normal>::Ptr out_norms = 0);
+
+		virtual bool is(std::string name) = 0;
+		virtual std::string get_classname() = 0;
 	};
 
 	struct ICP {
@@ -44,7 +47,7 @@ namespace gmnr {
 
 		virtual bool is(std::string name) = 0;
 		virtual std::string get_classname() = 0;
-		virtual Transform::Ptr do_icp(Data_Pack::Ptr source_data, Transform::Ptr init_tf = 0) = 0;
+		virtual Transform::Ptr do_icp(Data_Pack::Ptr source_data, Transform::Ptr init_tf = 0);
 		virtual Transform::Ptr do_icp(Data_Pack::Ptr source_data, pcl::PointIndices::Ptr src_indices, Transform::Ptr init_tf = 0) = 0; 
 
 		Data_Pack::Ptr target_data_;
@@ -86,7 +89,8 @@ namespace gmnr {
 		void clear();
 		void compute_correspondences(Data_Pack::Ptr source_data, Data_Pack::Ptr target_data, Transform::Ptr tf, Parameters params);
 		void compute_correspondences(Data_Pack::Ptr source_data, pcl::PointIndices::Ptr src_indices, Data_Pack::Ptr target_data, Transform::Ptr tf, Parameters params);
-		void extract_larger_than_deviation(pcl::PointIndices::Ptr &extracted_src_ids, float deviation_scale = 1.0f);
+		void extract_larger_than_deviation(pcl::PointIndices::Ptr extracted_src_ids, float deviation_scale = 1.0f);
+		void remove_larger_than_deviation(float deviation_scale = 1.0f);
 	};
 
 	struct LinearTransform : virtual Transform {
@@ -98,8 +102,8 @@ namespace gmnr {
 		virtual void transform(pcl::PointCloud<pcl::PointXYZ>::Ptr in, pcl::PointCloud<pcl::PointXYZ>::Ptr out,
 			pcl::PointCloud<pcl::Normal>::Ptr in_norms = 0, pcl::PointCloud<pcl::Normal>::Ptr out_norms = 0);
 
-		virtual void transform(pcl::PointCloud<pcl::PointXYZ>::Ptr in, pcl::PointIndices::Ptr src_indices, pcl::PointCloud<pcl::PointXYZ>::Ptr out,
-			pcl::PointCloud<pcl::Normal>::Ptr in_norms = 0, pcl::PointCloud<pcl::Normal>::Ptr out_norms = 0);
+		virtual bool is(std::string name) {return (name == "LinearTransform");}
+		virtual std::string get_classname() {return "LinearTransform";}
 
 		Eigen::Matrix4f mat_;
 	};
@@ -125,7 +129,6 @@ namespace gmnr {
 
 		virtual bool is(std::string name) {return (name == "LinearICP");}
 		virtual std::string get_classname() {return "LinearICP";}
-		virtual Transform::Ptr do_icp(Data_Pack::Ptr source_data, Transform::Ptr init_tf = 0);
 		virtual Transform::Ptr do_icp(Data_Pack::Ptr source_data, pcl::PointIndices::Ptr src_indices, Transform::Ptr init_tf = 0); 
 	}; 
 
@@ -138,8 +141,8 @@ namespace gmnr {
 		virtual void transform(pcl::PointCloud<pcl::PointXYZ>::Ptr in, pcl::PointCloud<pcl::PointXYZ>::Ptr out, 
 			pcl::PointCloud<pcl::Normal>::Ptr in_norms = 0, pcl::PointCloud<pcl::Normal>::Ptr out_norms = 0);
 
-		virtual void transform(pcl::PointCloud<pcl::PointXYZ>::Ptr in, pcl::PointIndices::Ptr indices, pcl::PointCloud<pcl::PointXYZ>::Ptr out,
-			pcl::PointCloud<pcl::Normal>::Ptr in_norms = 0, pcl::PointCloud<pcl::Normal>::Ptr out_norms = 0);
+		virtual bool is(std::string name) {return (name == "TPSTransform");}
+		virtual std::string get_classname() {return "TPSTransform";}
 
 		TPSFunction tps_;
 	};
@@ -165,7 +168,6 @@ namespace gmnr {
 
 		virtual bool is(std::string name) {return (name == "ThinPlateSplinesICP");}
 		virtual std::string get_classname() {return "ThinPlateSplinesICP";}
-		virtual Transform::Ptr do_icp(Data_Pack::Ptr source_data, Transform::Ptr init_tf = 0);
 		virtual Transform::Ptr do_icp(Data_Pack::Ptr source_data, pcl::PointIndices::Ptr src_indices, Transform::Ptr init_tf = 0); 
 	};
 
@@ -177,9 +179,9 @@ namespace gmnr {
 		
 		virtual void transform(pcl::PointCloud<pcl::PointXYZ>::Ptr in, pcl::PointCloud<pcl::PointXYZ>::Ptr out, 
 			pcl::PointCloud<pcl::Normal>::Ptr in_norms = 0, pcl::PointCloud<pcl::Normal>::Ptr out_norms = 0);
-		
-		virtual void transform(pcl::PointCloud<pcl::PointXYZ>::Ptr in, pcl::PointIndices::Ptr indices, pcl::PointCloud<pcl::PointXYZ>::Ptr out,
-			pcl::PointCloud<pcl::Normal>::Ptr in_norms = 0, pcl::PointCloud<pcl::Normal>::Ptr out_norms = 0);
+
+		virtual bool is(std::string name) {return (name == "LinearTPSTransform");}
+		virtual std::string get_classname() {return "LinearTPSTransform";}
 	};
 
 	struct LinearThinPlateSplinesICP : ICP  {
@@ -203,9 +205,54 @@ namespace gmnr {
 
 		virtual bool is(std::string name) {return (name == "LinearThinPlateSplinesICP");}
 		virtual std::string get_classname() {return "LinearThinPlateSplinesICP";}
-		virtual Transform::Ptr do_icp(Data_Pack::Ptr source_data, Transform::Ptr init_tf = 0);
 		virtual Transform::Ptr do_icp(Data_Pack::Ptr source_data, pcl::PointIndices::Ptr src_indices, Transform::Ptr init_tf = 0); 
 	};
+
+	struct Sampler {
+		typedef boost::shared_ptr<Sampler> Ptr;
+		virtual void sample(pcl::PointCloud<pcl::PointXYZ>::Ptr in_pts, pcl::PointCloud<pcl::PointXYZ>::Ptr out_pts, pcl::PointIndices::Ptr out_indices = 0);
+		virtual void sample(pcl::PointCloud<pcl::PointXYZ>::Ptr in_pts, pcl::PointIndices::Ptr in_indices, pcl::PointCloud<pcl::PointXYZ>::Ptr out_pts, pcl::PointIndices::Ptr out_indices = 0) = 0;
+	};
+
+	struct RandomSampler : Sampler {
+		typedef boost::shared_ptr<RandomSampler> Ptr;
+		RandomSampler(float sample_rate) : sample_rate_(sample_rate) {}
+		virtual void sample(pcl::PointCloud<pcl::PointXYZ>::Ptr in_pts, pcl::PointIndices::Ptr in_indices, pcl::PointCloud<pcl::PointXYZ>::Ptr out_pts, pcl::PointIndices::Ptr out_indices = 0);
+		float sample_rate_;
+	};
+
+	struct BoundingBox {
+		pcl::PointXYZ min_pts_;
+		pcl::PointXYZ max_pts_;
+		float x_len_;
+		float y_len_;
+		float z_len_;
+		float diag_len_;
+
+		void compute(pcl::PointCloud<pcl::PointXYZ>::Ptr pts);
+		void scale(float scale_factor);
+	};
+
+	struct GridSampler : Sampler {
+		typedef boost::shared_ptr<GridSampler> Ptr;
+
+		typedef std::string Voxel_Key; 
+		struct Voxel_Value {
+			int id_;
+			float vc_distance_;
+			Voxel_Value() {}
+			Voxel_Value(int id, float vc_distance) : id_(id), vc_distance_(vc_distance) {}
+		};
+
+		GridSampler(float voxel_size_x, float voxel_size_y, float voxel_size_z) : voxel_size_x_(voxel_size_x), voxel_size_y_(voxel_size_y), voxel_size_z_(voxel_size_z) {}
+		virtual void sample(pcl::PointCloud<pcl::PointXYZ>::Ptr in_pts, pcl::PointIndices::Ptr in_indices, pcl::PointCloud<pcl::PointXYZ>::Ptr out_pts, pcl::PointIndices::Ptr out_indices = 0);
+		Eigen::Vector3f voxel_center(float min_x, float min_y, float min_z, int id_x, int id_y, int id_z);
+
+		float voxel_size_x_;
+		float voxel_size_y_;
+		float voxel_size_z_;
+	};
+
 
 }
 
